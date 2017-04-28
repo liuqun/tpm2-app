@@ -6,9 +6,6 @@ using namespace std;
 #include "HashSequenceScheduler.h"
 #include "ResponseCodeResolver.h"
 
-#define TPM_HT_NONE ((TPM_HT) 0xFC)
-#define HR_NONE ((TPM_HC) (TPM_HT_NONE << HR_SHIFT))
-
 void HashSequenceScheduler::start(TPMI_ALG_HASH algorithm,
         TPM2B_AUTH *pAuthValue)
 {
@@ -115,6 +112,12 @@ HashSequenceScheduler::HashSequenceScheduler(TSS2_SYS_CONTEXT *pSysContext)
     this->m_started = false;
     this->m_savedSequenceHandle = 0x0;  // 方便调试
 }
+
+// ----------------------------------------------------------------------------
+// 以下为 C++ class HashSequenceStartCommand 的实现代码
+
+const TPM_HT TPM_HT_NONE = 0xFC;
+const TPM_HC HR_NONE = (TPM_HT_NONE << HR_SHIFT);
 
 /**
  * 构造函数
