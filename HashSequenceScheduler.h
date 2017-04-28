@@ -69,9 +69,9 @@ public:
     virtual void execute(TSS2_SYS_CONTEXT *pSysContext);
 
     /**
-     * 取出最终哈希摘要计算结果数据缓冲区的长度, 单位字节
+     * Get hash sequence handle
      *
-     * @return 长度
+     * @return TPMI_DH_OBJECT 序列句柄
      */
     TPMI_DH_OBJECT getHashSequenceHandle() const;
 };
