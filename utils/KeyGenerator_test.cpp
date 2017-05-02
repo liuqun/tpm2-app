@@ -567,7 +567,41 @@ static void DoMyTestsWithSysContext(TSS2_SYS_CONTEXT *pSysContext)
         }
         printf("\n");
     }
-    CreateChildNode(pSysContext, handle2048rsa, &(inSensitive.t.sensitive.userAuth));
+
+    printf("Next, we will create a child key node under handle2048rsa(0x%08X).\n",
+            handle2048rsa);
+
+    HMACKeyCreationUtility util;
+    util.setParentHandleWithAuthPassword(handle2048rsa, // 指定父节点句柄和节点访问密码
+            inSensitive.t.sensitive.userAuth.t.buffer,
+            inSensitive.t.sensitive.userAuth.t.size);
+    util.setKeyNameHashAlgorithm(TPM_ALG_SHA1); // 密钥树节点名称哈希方法: TPM_ALG_SHA1/256/384/512 或 TPM_ALG_SM3_256
+
+    printf("选择HMAC密钥所使用的哈希算法, 可从 TPM_ALG_SHA1/256/384/512 或 TPM_ALG_SM3_256 中任选其一\n");
+    util.setHashAlgorithm(TPM_ALG_SHA1);
+
+    printf("设置密钥的敏感数据, 其中包含随意设置的子节点的访问密码, 仅用于后续功能测试\n");
+    const char *PASSWORD = "child password";
+    const BYTE NO_EXTRA_DATA[] = {'\0'};
+    util.setSensitiveParameters((const BYTE *)PASSWORD, strlen(PASSWORD), NO_EXTRA_DATA, 0);
+
+    // 尝试创建密钥, 检查错误返回码
+    try
+    {
+        util.createKey(pSysContext);
+    }
+    catch (TSS2_RC err)
+    {
+        fprintf(stderr, "ERROR: HMACKeyCreationUtility::.createKey() Error=0x%X\n", err);
+        if (TPM_RC_LOCKOUT == rc)
+        {
+            fprintf(stderr, "TPM_RC_LOCKOUT=0x%X\n", TPM_RC_LOCKOUT);
+            fprintf(stderr, "TPM has been lockout at this moment. Check or reset TPM Dictionary-Attack-Lock settings, please.\n");
+        }
+        return;
+    }
+    printf("Child key node has been created successfully.\n");
+    return;
 }
 
 static void CreateChildNode(TSS2_SYS_CONTEXT *pSysContext, TPM_HANDLE parent, const TPM2B_AUTH *pParentNodeAuth)
