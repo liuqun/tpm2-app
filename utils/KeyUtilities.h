@@ -98,6 +98,109 @@ public:
             );
 };
 
+// ============================================================================
+
+/**
+ * HMAC密钥创建助手工具
+ *
+ * @brief 该助手类提供一组成员函数快速填写所有中间参数, 帮助开发者更轻松地
+ *        调用 TSS 接口函数, 完成 HMAC 密钥的创建.
+ */
+class HMACKeyCreationOperation {
+public:
+    TPMI_DH_OBJECT	parentHandle; /** 记录创建密钥时需要指定的密钥树父节点位置 */
+    TPMS_AUTH_COMMAND parentAuthSettings; /** 密钥树父节点的访问授权方式 */
+    TPMS_AUTH_COMMAND sensitiveParameterProtectionAuthSettings; /** 设置 TPM 报文收发敏感参数时是否进行加密保护 */
+    uint8_t m_cmdAuthsCount; // 取值范围: 1-2
+
+    // 用于保存 TPM 应答桢中的授权数据
+    TPMS_AUTH_RESPONSE m_sessionDataOut[3];
+    uint8_t m_rspAuthsCount;  // 取值范围: 1-2
+
+    // 用于保存输入参数的成员变量
+    TPM2B_SENSITIVE_CREATE inSensitive;
+    TPM2B_PUBLIC inPublic;
+    TPM2B_DATA outsideInfo;
+    TPML_PCR_SELECTION creationPCR;
+
+    // 用于保存输出参数的成员变量
+    TPM2B_PRIVATE outPrivate; // 输出-1: 下一步密钥树节点加载时会用到
+    TPM2B_PUBLIC outPublic; // 输出-2 下一步密钥树节点加载时会用到
+    TPM2B_CREATION_DATA creationData; // 输出-3
+    TPM2B_DIGEST creationHash; // 输出-4
+    TPMT_TK_CREATION creationTicket; // 输出-5
+
+public:
+    TSS2_RC rc;
+
+public:
+    HMACKeyCreationOperation();
+    ~HMACKeyCreationOperation();
+    TPMI_DH_OBJECT setParentHandleWithoutAuthValue(
+            TPMI_DH_OBJECT parentHandle /** 父句柄 */
+            );
+    TPMI_DH_OBJECT setParentHandleWithAuthPassword(
+            TPMI_DH_OBJECT parentHandle, /** 父句柄 */
+            const BYTE authValue[], /** 句柄授权数据 */
+            UINT16 size /** 数据长度 */
+            );
+    void clearSensitiveAuthValues(); /** 清除访问父句柄用的密码 */
+
+    /**
+     * 指定密码和额外的敏感数据
+     *
+     * @param keyAuthValue 为即将创建的新密钥节点指定一个授权密码
+     * @param size 授权值字节数, 可以等于0
+     * @param extraDataSize 可以等于0
+     * @param extraSensitiveData 当 extraDataSize == 0 时, 该指针将被忽略
+     */
+    const TPM2B_SENSITIVE_CREATE& setSensitiveParameters(
+            /* 指定子节点的授权值 */
+            const BYTE keyAuthValue[],
+            UINT16 size,
+            /* 附加一些额外的初始值用于创建密钥 */
+            const BYTE extraSensitiveData[],
+            UINT16 extraDataSize // 附加敏感数据, 长度可以为空
+    );
+    void clearSensitiveParameters(); /** 清除前一个函数指定的节点授权访问密+额外的敏感数据 */
+
+    /**
+     * 指定生成密钥树节点名称时采用哈希算法
+     * 注意这里不是指定 HMAC 运算所要采用的哈希算法
+     *
+     * @param keyNameHashAlg 备选值包括:
+     *  TPM_ALG_SHA1
+     *  TPM_ALG_SHA256
+     *  TPM_ALG_SHA384
+     *  TPM_ALG_SHA512
+     *  TPM_ALG_SM3_256
+     *  以及默认值 TPM_ALG_NULL (表示不进行哈希)
+     * @return 返回所选择的哈希算法, 该返回值仅为方便调试
+     */
+    TPMI_ALG_HASH setKeyNameHashAlgorithm(TPMI_ALG_HASH keyNameHashAlg);
+
+    /**
+     * 选择 HMAC 运算所使用的哈希算法
+     *
+     * @param hashAlg 备选值包括:
+     *  TPM_ALG_SHA1
+     *  TPM_ALG_SHA256
+     *  TPM_ALG_SHA384
+     *  TPM_ALG_SHA512
+     *  TPM_ALG_SM3_256
+     *  以及默认值 TPM_ALG_NULL (表示不进行哈希)
+     * @return 返回所选择的哈希算法, 该返回值仅为方便调试
+     */
+    TPMI_ALG_HASH setHashAlgorithm(TPMI_ALG_HASH hashAlg);
+
+    /**
+     * 创建密钥
+     *
+     * @param pSysContext system api 上下文指针
+     */
+    void createKey(TSS2_SYS_CONTEXT *pSysContext);
+};
+
 #endif // __cplusplus
 #endif // KEY_UTILITIES_H_
 
