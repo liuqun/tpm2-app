@@ -377,7 +377,7 @@ public:
         rspAuths[0] = &(m_sessionDataOut[0]);
         rspAuths[1] = &(m_sessionDataOut[1]);
         rspAuths[2] = &(m_sessionDataOut[2]);
-        rspAuthsArray.rspAuthsCount = m_cmdAuthsCount;;
+        rspAuthsArray.rspAuthsCount = m_cmdAuthsCount;
         rspAuthsArray.rspAuths = rspAuths;
 
         /* 调用 TPM 命令 */
