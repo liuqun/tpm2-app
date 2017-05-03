@@ -17,8 +17,11 @@ private:
     TPMI_DH_OBJECT keyHandle;
     // 上面的成员变量用于保存输入参数
     // 下面的成员变量用于保存输出结果
+public:
     TPM2B_PUBLIC keyPublicData; // 内部包含 TPM 定义的巨型数据结构
+public:
     TPM2B_NAME keyName;
+public:
     TPM2B_NAME qualifiedName;
 
 public:
