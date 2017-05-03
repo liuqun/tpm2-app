@@ -606,10 +606,126 @@ static void DoMyTestsWithSysContext(TSS2_SYS_CONTEXT *pSysContext)
         }
         printf("\n");
     }
+
+    char childPassword[] = "child password";
+    TestChildNodeCreation(
+            pSysContext,
+
+            // 指定父节点句柄和节点授权访问密码
+            handle2048rsa,
+            inSensitive.t.sensitive.userAuth.t.buffer,
+            inSensitive.t.sensitive.userAuth.t.size,
+
+            // 另外提供新建子节点的访问密码
+            (BYTE *)childPassword,
+            strlen((char *)childPassword)
+            );
 }
 
 static void TestChildNodeCreation(TSS2_SYS_CONTEXT *pSysContext, TPM_HANDLE parent, const BYTE parentPassword[], size_t parentPasswordSize, const BYTE newChildPassword[], size_t newChildPasswordSize)
 {
+    // ---------------------------------------------------------------------------------
+    printf("Next, we will create a child key node under parent(0x%08X).\n",
+            parent);
+    HMACKeyCreationOperation keyCreator;
+
+    keyCreator.setParentHandleWithAuthPassword(
+            parent, // 指定父节点句柄和节点访问密码
+            parentPassword,
+            parentPasswordSize);
+    keyCreator.setKeyNameHashAlgorithm(TPM_ALG_SHA1); // 密钥树节点名称哈希方法: TPM_ALG_SHA1/256/384/512 或 TPM_ALG_SM3_256
+
+    printf("选择HMAC密钥所使用的哈希算法, 可从 TPM_ALG_SHA1/256/384/512 或 TPM_ALG_SM3_256 中任选其一\n");
+    keyCreator.setHashAlgorithm(TPM_ALG_SHA1);
+
+    printf("设置密钥的敏感数据(即指定子节点本身的访问密码). 仅用于后续功能测试\n");
+    const BYTE NO_EXTRA_DATA[] = {'\0'};
+    keyCreator.setSensitiveParameters(newChildPassword, newChildPasswordSize, NO_EXTRA_DATA, 0);
+
+    // 尝试创建密钥, 检查错误返回码
+    try
+    {
+        keyCreator.createKey(pSysContext);
+    }
+    catch (TSS2_RC err)
+    {
+        fprintf(stderr, "ERROR: HMACKeyCreationUtility::.createKey() Error=0x%X\n", err);
+        if (TPM_RC_LOCKOUT == err)
+        {
+            fprintf(stderr, "TPM_RC_LOCKOUT=0x%X\n", TPM_RC_LOCKOUT);
+            fprintf(stderr, "TPM has been lockout at this moment. Check or reset TPM Dictionary-Attack-Lock settings, please.\n");
+        }
+        return;
+    }
+    printf("Child key node has been created successfully.\n");
+
+    // ---------------------------------------------------------------------------------
+    printf("Next, 让 TPM 加载密钥节点.\n");
+    KeyLoadingOperation keyLoader;
+
+    keyLoader.setParentHandleWithAuthPassword(
+            parent, // 指定父节点句柄和节点访问密码
+            parentPassword,
+            parentPasswordSize
+            );
+    try
+    {
+        keyLoader.loadExistingKey(
+                pSysContext, // 上下文指针
+                keyCreator.outPrivate, // 引用
+                keyCreator.outPublic //
+                );
+        printf("TPM 加载成功, 新节点的句柄=0x%X\n", keyLoader.keyHandle);
+        printf("Load 命令取回的结果是: keyLoader.keyName.t.size=%d\n", keyLoader.keyName.t.size);
+        printf("十六进制数据:");
+        for (size_t i=0; i<keyLoader.keyName.t.size; i++)
+        {
+            printf(" 0x%02X,", keyLoader.keyName.t.name[i]);
+        }
+        printf("\n");
+    }
+    catch (TSS2_RC err)
+    {
+        fprintf(stderr, "ERROR: err=0x%X\n", err);
+        if (TSS2_SYS_RC_BAD_VALUE == err)
+        {
+            fprintf(stderr, "ERROR: TSS2_SYS_RC_BAD_VALUE=0x%X\n", TSS2_SYS_RC_BAD_VALUE);
+        }
+        if (TSS2_SYS_RC_INSUFFICIENT_BUFFER == err)
+        {
+            fprintf(stderr, "ERROR: TSS2_SYS_RC_INSUFFICIENT_BUFFER=0x%X\n", TSS2_SYS_RC_INSUFFICIENT_BUFFER);
+            //fprintf(stderr, "TPM2B_NAME::t.size = %d, 可能size没有初始化\n", loadingUtil.keyName.t.size);
+        }
+        if (TPM_RC_LOCKOUT == err)
+        {
+            fprintf(stderr, "TPM_RC_LOCKOUT=0x%X\n", TPM_RC_LOCKOUT);
+            fprintf(stderr, "TPM has been lockout at this moment. Check or reset TPM Dictionary-Attack-Lock settings, please.\n");
+        }
+        return;
+    }
+
+    // ---------------------------------------------------------------------------------
+    printf("Next, 调用 ReadPublic 命令查看该密钥节点的节点名.\n");
+    KeyPublicDataReadingOperation readpublic;
+
+    readpublic.setKeyHandle(keyLoader.keyHandle);
+    try
+    {
+        readpublic.execute(pSysContext);
+        printf("ReadPublic 命令取回的结果是: reader.keyName.t.size=%d\n", readpublic.keyName.t.size);
+        printf("十六进制数据:");
+        for (size_t i=0; i<readpublic.keyName.t.size; i++)
+        {
+            printf(" 0x%02X,", readpublic.keyName.t.name[i]);
+        }
+        printf("\n");
+        printf("备注: 对比 Load、ReadPublic 两条命令各自取回的结果(应该一致)\n");
+    }
+    catch (TSS2_RC err)
+    {
+        fprintf(stderr, "ERROR: err=0x%X\n", err);
+        return;
+    }
 }
 
 /* 调试专用函数 */
