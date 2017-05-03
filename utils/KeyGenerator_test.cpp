@@ -590,7 +590,7 @@ static void DoMyTestsWithSysContext(TSS2_SYS_CONTEXT *pSysContext)
         catch (TSS2_RC err)
         {
             fprintf(stderr, "KeyPublicDataReadingOperation::execute() Error=0x%X\n", err);
-            if (TSS2_SYS_RC_BAD_VALUE == rc)
+            if (TSS2_SYS_RC_BAD_VALUE == err)
             {
                 fprintf(stderr, "ERROR: TSS2_SYS_RC_BAD_VALUE=0x%X\n", TSS2_SYS_RC_BAD_VALUE);
             }
@@ -631,7 +631,7 @@ static void DoMyTestsWithSysContext(TSS2_SYS_CONTEXT *pSysContext)
     catch (TSS2_RC err)
     {
         fprintf(stderr, "ERROR: HMACKeyCreationUtility::.createKey() Error=0x%X\n", err);
-        if (TPM_RC_LOCKOUT == rc)
+        if (TPM_RC_LOCKOUT == err)
         {
             fprintf(stderr, "TPM_RC_LOCKOUT=0x%X\n", TPM_RC_LOCKOUT);
             fprintf(stderr, "TPM has been lockout at this moment. Check or reset TPM Dictionary-Attack-Lock settings, please.\n");
