@@ -287,6 +287,8 @@ public:
         inPublic.t.publicArea.unique.keyedHash.t.size = 0;
         inPublic.t.publicArea.unique.keyedHash.t.buffer[0] = '\0'; // 填零便于测试
 
+        inPublic.t.size = 0; // 备忘: 作为Tss2_Sys_Create()函数的输入参数时, 该size字段实际上是无用的, 无需手动赋值, 因为Tss2_Sys_Create函数内部会自动计算TPM2B_PUBLIC数据块Marshal之后的长度
+
         // 其他输入参数的初始值
         outsideInfo.t.size = 0;
         creationPCR.count = 0;
