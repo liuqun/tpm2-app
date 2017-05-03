@@ -57,3 +57,87 @@ const TPM2B_NAME& KeyPublicDataReadingOperation::getKeyName() {
     return keyName;
 }
 
+// ============================================================================
+
+KeyLoadingOperation::KeyLoadingOperation() {
+    parentHandle = 0; // 初始化清零 parentHandle, 仅仅为了便于测试
+
+    parentAuthSettings.sessionHandle = TPM_RS_PW;
+    parentAuthSettings.nonce.t.size = 0;
+    parentAuthSettings.sessionAttributes.val = 0;
+    parentAuthSettings.hmac.t.size = 0;
+    parentAuthSettings.hmac.t.buffer[0] = '\0'; // Used for debugging
+
+    keyHandle = 0; // 初始化清零 keyHandle, 仅仅为了便于测试
+    keyName.t.size = 0;
+
+    // 清空错误码缓存
+    rc = TPM_RC_SUCCESS;
+}
+
+KeyLoadingOperation::~KeyLoadingOperation() {
+    clearSensitiveAuthValues();
+}
+
+TPMI_DH_OBJECT KeyLoadingOperation::setParentHandleWithAuthPassword(
+        TPMI_DH_OBJECT parentHandle,
+        const BYTE authValue[], // 句柄授权数据
+        UINT16 size // 数据长度
+        ) {
+    parentAuthSettings.sessionHandle = TPM_RS_PW;
+    parentAuthSettings.nonce.t.size = 0;
+    parentAuthSettings.sessionAttributes.val = 0;
+    if (size > sizeof(parentAuthSettings.hmac.t.buffer)) {
+        size = sizeof(parentAuthSettings.hmac.t.buffer); // 舍弃过长的字符, 防止溢出
+    }
+    parentAuthSettings.hmac.t.size = size;
+    memcpy((void *) parentAuthSettings.hmac.t.buffer, (void *) authValue, size);
+    this->parentHandle = parentHandle;
+    return parentHandle;
+}
+
+void KeyLoadingOperation::clearSensitiveAuthValues() {
+    memset(&(parentAuthSettings.hmac), 0x00, sizeof(parentAuthSettings.hmac));
+}
+
+TPMI_DH_OBJECT KeyLoadingOperation::setParentHandleWithoutAuthValue(TPMI_DH_OBJECT parentHandle) {
+    this->parentHandle = parentHandle;
+    return parentHandle;
+}
+
+void KeyLoadingOperation::loadExistingKey(TSS2_SYS_CONTEXT *pSysContext, const TPM2B_PRIVATE& keyPrivate, const TPM2B_PUBLIC& keyPublic) {
+    TPMS_AUTH_COMMAND *cmdAuths[3];
+    TSS2_SYS_CMD_AUTHS cmdAuthsArray;
+    cmdAuths[0] = &parentAuthSettings;
+    cmdAuthsArray.cmdAuthsCount = 1;
+    cmdAuthsArray.cmdAuths = cmdAuths;
+
+    TPMS_AUTH_RESPONSE *rspAuths[3];
+    TSS2_SYS_RSP_AUTHS rspAuthsArray;
+    rspAuths[0] = &(m_sessionDataOut[0]);
+    rspAuthsArray.rspAuthsCount = cmdAuthsArray.cmdAuthsCount;
+    rspAuthsArray.rspAuths = rspAuths;
+
+    // 调用API函数前, 需将输出数据区的size标志复位到最大值
+    // 避免API返回错误编码TSS2_SYS_RC_INSUFFICIENT_BUFFER
+    keyName.t.size = sizeof(keyName) - sizeof(keyName.t.size);
+
+    /* 以上准备就绪后方可调用API函数 */
+    rc = Tss2_Sys_Load(
+            pSysContext, //
+            parentHandle, //
+            &cmdAuthsArray, //
+            (TPM2B_PRIVATE *)&keyPrivate, // IN
+            (TPM2B_PUBLIC *)&keyPublic, // IN
+            // 以上为输入参数
+            // 以下为输出参数
+            &keyHandle, //
+            &keyName, //
+            &rspAuthsArray //
+            );
+    if (rc) {
+        // fprintf(stderr, "Error: rc=0x%X\n", rc);
+        throw (TSS2_RC) rc;
+    }
+    return;
+}
