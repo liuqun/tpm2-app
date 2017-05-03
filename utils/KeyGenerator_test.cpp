@@ -210,7 +210,7 @@ public:
         inPublic.t.publicArea.objectAttributes.sign = 1; // 用于签名
         inPublic.t.publicArea.authPolicy.t.size = 0;
         inPublic.t.publicArea.parameters.keyedHashDetail.scheme.scheme = TPM_ALG_HMAC; // 必填项
-        inPublic.t.publicArea.parameters.keyedHashDetail.scheme.details.hmac.hashAlg = inPublic.t.publicArea.nameAlg;
+        inPublic.t.publicArea.parameters.keyedHashDetail.scheme.details.hmac.hashAlg = TPM_ALG_NULL;
         inPublic.t.publicArea.unique.keyedHash.t.size = 0;
         inPublic.t.publicArea.unique.keyedHash.t.buffer[0] = '\0'; // 填零便于测试
 
