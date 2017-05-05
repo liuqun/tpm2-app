@@ -1,5 +1,6 @@
-﻿/*
-* SHA1.c
+﻿/**
+* @file SHA1.c
+* @brief SHA1 哈希算法的一个 C 语言实现
 *
 * Description:
 * This file implements the Secure Hashing Algorithm 1 as
@@ -27,15 +28,9 @@
 * implementation only works with messages with a length that is
 * a multiple of the size of an 8-bit character.
 *
+* @note 此 SHA1 哈希算法的实现代码与 RFC3174 中的样例代码基本一致
+* @see https://tools.ietf.org/html/rfc3174
 */
-
-
-/**
- * SHA1 哈希算法的一个 C 语言实现
- *
- * @see https://tools.ietf.org/html/rfc3174
- * 此 SHA1 哈希算法的实现代码与 RFC3174 中的样例代码基本一致
- */
 
 #include "SHA1.h"
 
@@ -44,14 +39,15 @@ extern "C"
 {
 #endif
 
+/** 模拟寄存器循环左移指令 */
 /*
 * Define the SHA1 circular left shift macro
 */
 #define SHA1CircularShift(bits,word) \
 	(((word) << (bits)) | ((word) >> (32-(bits))))
 /* Local Function Prototyptes */
-void SHA1PadMessage(SHA1Context *);
-void SHA1ProcessMessageBlock(SHA1Context *);
+static void SHA1PadMessage(SHA1Context *);
+static void SHA1ProcessMessageBlock(SHA1Context *);
 /*
 * SHA1Reset
 *

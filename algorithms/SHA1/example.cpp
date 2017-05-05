@@ -1,5 +1,5 @@
 /*
-* sha1test.c
+* example.cpp
 *
 * Description:
 * This file will exercise the SHA-1 code performing the three
