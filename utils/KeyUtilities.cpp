@@ -105,7 +105,7 @@ TPMI_DH_OBJECT KeyLoadingOperation::setParentHandleWithoutAuthValue(TPMI_DH_OBJE
     return parentHandle;
 }
 
-void KeyLoadingOperation::loadExistingKey(TSS2_SYS_CONTEXT *pSysContext, const TPM2B_PRIVATE& keyPrivate, const TPM2B_PUBLIC& keyPublic) {
+void KeyLoadingOperation::loadExistingKey(TSS2_SYS_CONTEXT *pSysContext, const TPM2B_PRIVATE& inPrivate, const TPM2B_PUBLIC& inPublic) {
     TPMS_AUTH_COMMAND *cmdAuths[3];
     TSS2_SYS_CMD_AUTHS cmdAuthsArray;
     cmdAuths[0] = &parentAuthSettings;
@@ -127,8 +127,8 @@ void KeyLoadingOperation::loadExistingKey(TSS2_SYS_CONTEXT *pSysContext, const T
             pSysContext, //
             parentHandle, //
             &cmdAuthsArray, //
-            (TPM2B_PRIVATE *)&keyPrivate, // IN
-            (TPM2B_PUBLIC *)&keyPublic, // IN
+            (TPM2B_PRIVATE *)&inPrivate, // IN
+            (TPM2B_PUBLIC *)&inPublic, // IN
             // 以上为输入参数
             // 以下为输出参数
             &keyHandle, //

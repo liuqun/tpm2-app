@@ -93,8 +93,8 @@ public:
      */
     void loadExistingKey(
             TSS2_SYS_CONTEXT *pSysContext, /** system api 上下文指针 */
-            const TPM2B_PRIVATE& keyPrivate, /** 需要引用Create命令的输出数据 */
-            const TPM2B_PUBLIC& keyPublic /** 需要引用Create命令的输出数据 */
+            const TPM2B_PRIVATE& inPrivate, /** 需要引用Create命令的输出数据 */
+            const TPM2B_PUBLIC& inPublic /** 需要引用Create命令的输出数据 */
             );
 };
 
