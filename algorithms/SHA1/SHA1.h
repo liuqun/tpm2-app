@@ -1,5 +1,5 @@
 /*
-* sha1.h
+* SHA1.h
 *
 * Description:
 * This is the header file for code which implements the Secure
@@ -9,13 +9,17 @@
 * Many of the variable names in this code, especially the
 * single character names, were used because those were the names
 * used in the publication.
-*
-* Please read the file sha1.c for more information.
-*
 */
 
 /**
- * 这个文件从 rfc 文档直接拷贝下来的 rfc3174
+ * SHA1 哈希算法的 C 语言头文件
+ *
+ * @brief SHA1 哈希算法的详细描述和实现代码请查阅 RFC3174
+ *        链接地址如下:
+ * @see https://tools.ietf.org/html/rfc3174
+ *
+ * @example example.cpp
+ * 函数调用方法请参考此目录下的示例文件: example.cpp
  */
 
 #ifndef _SHA1_H_

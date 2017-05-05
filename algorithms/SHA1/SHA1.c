@@ -1,8 +1,5 @@
-﻿// SHA1.cpp : Defines the entry point for the console application.
-//
-
-/*
-* sha1.c
+﻿/*
+* SHA1.c
 *
 * Description:
 * This file implements the Secure Hashing Algorithm 1 as
@@ -34,7 +31,10 @@
 
 
 /**
- * 这个文件从 rfc 文档直接拷贝下来的 rfc3174
+ * SHA1 哈希算法的一个 C 语言实现
+ *
+ * @see https://tools.ietf.org/html/rfc3174
+ * 此 SHA1 哈希算法的实现代码与 RFC3174 中的样例代码基本一致
  */
 
 #include "SHA1.h"
