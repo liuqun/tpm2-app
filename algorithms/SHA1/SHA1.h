@@ -35,27 +35,27 @@
 #define _SHA_enum_
 enum
 {
-	shaSuccess = 0,
-	shaNull, /* Null pointer parameter */
-	shaInputTooLong, /* input data too long */
-	shaStateError /* called Input after Result */
+	shaSuccess = 0, ///< Success
+	shaNull, ///< Null pointer parameter
+	shaInputTooLong, ///< input data too long
+	shaStateError, ///< This error happens when another SHA1Input() is called unexpected after SHA1Result()
 };
 #endif
-#define SHA1HashSize 20
-/*
+#define SHA1HashSize 20 ///< SHA1 哈希摘要结果长度(20 字节)
+/**
 * This structure will hold context information for the SHA-1
 * hashing operation
 */
-typedef struct SHA1Context
+typedef struct
 {
-	uint32_t Intermediate_Hash[SHA1HashSize/4]; /* Message Digest */
-	uint32_t Length_Low; /* Message length in bits */
-	uint32_t Length_High; /* Message length in bits */
-	/* Index into message block array */
+	uint32_t Intermediate_Hash[SHA1HashSize/4]; ///< Message Digest
+	uint32_t Length_Low; ///< Message length in bits
+	uint32_t Length_High; ///< Message length in bits
+	/** Index into message block array */
 	int_least16_t Message_Block_Index;
-	uint8_t Message_Block[64]; /* 512-bit message blocks */
-	int Computed; /* Is the digest computed? */
-	int Corrupted; /* Is the message digest corrupted? */
+	uint8_t Message_Block[64]; ///< 512-bit message blocks
+	int Computed; ///< Is the digest computed?
+	int Corrupted; ///< Is the message digest corrupted?
 } SHA1Context;
 
 
@@ -65,12 +65,36 @@ typedef struct SHA1Context
 #ifdef __cplusplus
 extern "C" {
 #endif//
-int SHA1Reset( SHA1Context *);
-int SHA1Input( SHA1Context *,
-	const uint8_t *,
-	unsigned int);
-int SHA1Result( SHA1Context *,
-	uint8_t Message_Digest[SHA1HashSize]);
+
+/**
+ * 对 SHA1 上下文结构体进行复位清零
+ *
+ * @return shaSuccess=0 表示成功, 其他非 0 值表示错误: shaNull
+ */
+int SHA1Reset(
+		SHA1Context *context ///< 上下文指针
+		);
+
+/**
+ * 向 SHA1 上下文结构体输入数据
+ *
+ * @return shaSuccess=0 表示成功, 其他非 0 值表示错误: shaNull / shaInputTooLong / shaStateError
+ */
+int SHA1Input(
+		SHA1Context *context, ///< 上下文指针
+		const uint8_t data[], ///< 数据
+		unsigned int length ///< 数据长度
+		);
+
+/**
+ * 从 SHA1 上下文取出哈希摘要结果
+ *
+ * @return shaSuccess=0 表示成功, 其他非 0 值表示错误: shaNull / shaStateError
+ */
+int SHA1Result(
+		SHA1Context *context, ///< 上下文指针
+		uint8_t Message_Digest[SHA1HashSize] ///< 输出 SHA1HashSize=20 字节哈希摘要
+		);
 
 #ifdef __cplusplus
 }

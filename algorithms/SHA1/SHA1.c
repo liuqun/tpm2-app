@@ -156,9 +156,11 @@ int SHA1Result( SHA1Context *context,
 *
 */
 
-int SHA1Input( SHA1Context *context,
-	const uint8_t *message_array,
-	unsigned length)
+int SHA1Input(
+		SHA1Context *context, ///< 上下文指针
+		const uint8_t message_array[], ///< 数据
+		unsigned int length ///< 数据长度
+		)
 {
 	if (!length)
 	{
