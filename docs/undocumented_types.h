@@ -37,7 +37,7 @@
 ///     } TPM2B_##name
 /// ```
 /// Unfortunately, doxygen (and most C/C++ IDE's) could not understand these
-/// code tricks. I decided to fix those broken structure references by hand,
+/// code tricks. I decided to fix those broken structure references by hand
 /// before anyone could give a better solution.
 ///
 /// @see TPM2B_TYPE
@@ -163,7 +163,7 @@ typedef	union {
  *     &inPublic,
  *     &outsideInfo,
  *     &creationPCR,
- *     &outPrivate, // Here TPM2B_PRIVATE is used as output parameter
+ *     &outPrivate, // Here TPM2B_PRIVATE is used as an output parameter
  *     &outPublic,
  *     &creationData,
  *     &creationHash,
@@ -178,7 +178,7 @@ typedef	union {
  *     sysContext,
  *     parentHandle,
  *     &cmdAuthsArray,
- *     &inPrivate, // Here TPM2B_PRIVATE is used as input parameter
+ *     &inPrivate, // Here TPM2B_PRIVATE is used as an input parameter
  *     &inPublic,
  *     &keyHandle,
  *     &keyName,
