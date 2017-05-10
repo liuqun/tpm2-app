@@ -33,12 +33,15 @@
 */
 #ifndef _SHA_enum_
 #define _SHA_enum_
+/**
+* 定义 SHA1 函数的一组成功/错误返回值
+*/
 enum
 {
 	shaSuccess = 0, ///< Success
 	shaNull, ///< Null pointer parameter
 	shaInputTooLong, ///< input data too long
-	shaStateError, ///< This error happens when another SHA1Input() is called unexpected after SHA1Result()
+	shaStateError, ///< This error happens when another SHA1Input() is called unexpectedly after SHA1Result()
 };
 #endif
 #define SHA1HashSize 20 ///< SHA1 哈希摘要结果长度(20 字节)
