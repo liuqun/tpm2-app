@@ -83,3 +83,59 @@ typedef union {
     TPM2B b;
 } TPM2B_DIGEST;
 
+/**
+ * TPM 2.0 key creation private data storage structure
+ * (with a UINT16 size indicator)
+ *
+ * ```
+ * // C++ pseudo-code showing the usage of TPM2B_PRIVATE
+ *
+ * TPM2B_PRIVATE outPrivate;
+ *
+ * // Call Tss2_Sys_Create()
+ * Tss2_Sys_Create(
+ *     sysContext,
+ *     parentHandle,
+ *     &cmdAuthsArray,
+ *     &inSensitive,
+ *     &inPublic,
+ *     &outsideInfo,
+ *     &creationPCR,
+ *     &outPrivate, // Here TPM2B_PRIVATE is used as output parameter
+ *     &outPublic,
+ *     &creationData,
+ *     &creationHash,
+ *     &creationTicket,
+ *     &rspAuthsArray
+ *     );
+ *
+ * TPM2B_PRIVATE& inPrivate = outPrivate; // C++ coding syntax
+ *
+ * // Call Tss2_Sys_Load()
+ * Tss2_Sys_Load(
+ *     sysContext,
+ *     parentHandle,
+ *     &cmdAuthsArray,
+ *     &inPrivate, // Here TPM2B_PRIVATE is used as input parameter
+ *     &inPublic,
+ *     &keyHandle,
+ *     &keyName,
+ *     &rspAuthsArray
+ *     );
+ * ```
+ * @details
+ * This structure is designed as a scalable-sized buffer.
+ *
+ * @see _PRIVATE
+ *
+ * @see https://trustedcomputinggroup.org/wp-content/uploads/TPM-Rev-2.0-Part-2-Structures-01.38.pdf ,
+ * Chapter 12.3.7
+ * Table 191: Definition of TPM2B_PRIVATE Structure
+ */
+typedef union {
+    struct {
+        UINT16 size;
+        BYTE buffer[sizeof(_PRIVATE)];
+    } t;
+    TPM2B b;
+} TPM2B_PRIVATE;
