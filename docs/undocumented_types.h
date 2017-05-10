@@ -84,6 +84,68 @@ typedef union {
 } TPM2B_DIGEST;
 
 /**
+ * TPM 2.0 key sensitive data storage area (with a UINT16 size indicator).
+ * Mostly used by Tss2_Sys_LoadExternal().
+ * ```
+ * // Pseudo-code showing the usage of TPM2B_Sensitive and Tss2_Sys_LoadExternal()
+ *
+ * TPM2B_SENSITIVE inPrivate;
+ * TPM2B_AUTH newAuthValue;
+ * TPM2B_DIGEST seed;
+ * TPM2B_SENSITIVE_DATA key; // An external key's length and secret bits
+ *
+ * inPrivate.t.size = 0;
+ *
+ * inPrivate.t.sensitiveArea.sensitiveType = (TPMI_ALG_PUBLIC) TPM_ALG_KEYEDHASH;
+ * inPrivate.t.size += sizeof(TPMI_ALG_PUBLIC);
+ *
+ * inPrivate.t.sensitiveArea.authValue = newAuthValue = ...;
+ * inPrivate.t.size += (newAuthValue.b.size + sizeof(newAuthValue.b.size));
+ *
+ * inPrivate.t.sensitiveArea.seedValue = seed = ...;
+ * inPrivate.t.size += (seed.b.size + sizeof(seed.b.size));
+ *
+ * inPrivate.t.sensitiveArea.sensitive.bits = key = ...;
+ * inPrivate.t.size += (key.b.size + sizeof(key.b.size));
+ *
+ * Tss2_Sys_LoadExternal(
+ *     sysContext,
+ *     &cmdAuthsArray,
+ *     &inPrivate, // Here TPM2B_SENSITIVE is used as an input parameter
+ *     &inPublic,
+ *     TPM_RH_NULL,
+ *     keyHandle,
+ *     keyName,
+ *     &rspAuthsArray
+ *     );
+ * ```
+ *
+ * @details
+ * TPM2B_* wrapper of TPMT_SENSITIVE.
+ *
+ * @see TPMT_SENSITIVE
+ *
+ * @see TPM2B_PRIVATE_KEY_RSA
+ * @see TPM2B_ECC_PARAMETER
+ * @see TPM2B_SENSITIVE_DATA
+ * @see TPM2B_SYM_KEY
+ * @see TPM2B_PRIVATE_VENDOR_SPECIFIC
+ *
+ * @see Tss2_Sys_LoadExternal()
+ *
+ * @see https://trustedcomputinggroup.org/wp-content/uploads/TPM-Rev-2.0-Part-2-Structures-01.38.pdf ,
+ * Chapter 12.3.3
+ * Table 196:  Definition of TPM2B_SENSITIVE Structure
+ */
+typedef	union {
+    struct {
+        UINT16 size;
+        TPMT_SENSITIVE sensitiveArea;
+    } t;
+    TPM2B b;
+} TPM2B_SENSITIVE;
+
+/**
  * TPM 2.0 key creation private data storage structure
  * (with a UINT16 size indicator)
  *
