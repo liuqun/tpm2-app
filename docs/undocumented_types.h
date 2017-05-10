@@ -123,14 +123,20 @@ typedef union {
  *     &rspAuthsArray
  *     );
  * ```
- * @details
- * This structure is designed as a scalable-sized buffer.
+ * @note
+ * The buffer of TPM2B_PRIVATE comes to be a _PRIVATE structure, which holds 3
+ * more data blocks: integrityOuter digest, integrityInner digest and a
+ * TPM2B_SENSITIVE structure.
+ * And deep inside the TPM2B_SENSITIVE structure, it holds a TPMT_SENSITIVE
+ * sensitiveArea (for example a private key).
  *
  * @see _PRIVATE
+ * @see TPM2B_SENSITIVE
+ * @see TPMT_SENSITIVE
  *
  * @see https://trustedcomputinggroup.org/wp-content/uploads/TPM-Rev-2.0-Part-2-Structures-01.38.pdf ,
  * Chapter 12.3.7
- * Table 191: Definition of TPM2B_PRIVATE Structure
+ * Table 198: Definition of TPM2B_PRIVATE Structure
  */
 typedef union {
     struct {
