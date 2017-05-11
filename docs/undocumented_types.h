@@ -312,3 +312,75 @@ typedef union {
     } t;
     TPM2B b;
 } TPM2B_PUBLIC;
+
+/**
+ * TPM 2.0 key name storage wrapper structure.
+ *
+ * @warning TPM 密钥名称的概念定义并不是我们常识中的字符串名称,
+ * 而是一个由 20 字节哈希摘要数值加上 2 字节哈希算法编号组成的二进制数据
+ * (此处假定配置该密钥节点时指定以 SHA1 算法存储密钥名称)
+ *
+ * @note 普通密钥节点的密钥名称与密钥树主节点的密钥名称的格式完全不同, 详见 TPMU_NAME
+ * @see TPMU_NAME: “密钥树主节点的密钥名称”和“普通密钥节点的密钥名称”的格式定义(C 语言 union 联合体)
+ *
+ * ```
+ * //Pseudo-code showing the usage of TPM2B_NAME
+ * TPM2B_NAME keyName;
+ * TPM2B_PUBLIC inPublic;
+ * info.t.publicArea.nameAlg = TPM_ALG_SHA1;
+ * // ...
+ * Tss2_Sys_Load(
+ *     sysContext,
+ *     parentHandle,
+ *     &cmdAuthsArray,
+ *     &inPrivate,
+ *     &inPublic,
+ *     &keyHandle,
+ *     &keyName, // Here TPM2B_NAME is used as an output parameter.
+ *     &rspAuthsArray
+ *     );
+ * ```
+ *
+ * @details 密钥名称长度 size 取决于 TPM 密钥树创建该节点时指定的密钥名称哈希算法
+ * (即 TPMT_PUBLIC 结构体的成员变量 nameAlg). 伪代码描述如下:
+ * ```
+ * TPM2B_PUBLIC inPublic;
+ * inPublic.t.publicArea.nameAlg = TPM_ALG_SHA1;
+ * if (inPublic.t.publicArea.nameAlg == TPM_ALG_SHA1) {
+ *     keyName.t.size = SHA1_DIGEST_SIZE + sizeof(TPMI_ALG_HASH); // 即 22 字节
+ * }
+ * else if (inPublic.t.publicArea.nameAlg == TPM_ALG_SHA256) {
+ *     keyName.t.size = SHA256_DIGEST_SIZE + sizeof(TPMI_ALG_HASH); // 即 34 字节
+ * }
+ * else if (inPublic.t.publicArea.nameAlg == TPM_ALG_SHA384) {
+ *     keyName.t.size = SHA384_DIGEST_SIZE + sizeof(TPMI_ALG_HASH); // 即 50 字节
+ * }
+ * else if (inPublic.t.publicArea.nameAlg == TPM_ALG_SHA512) {
+ *     keyName.t.size = SHA512_DIGEST_SIZE + sizeof(TPMI_ALG_HASH); // 即 66 字节
+ * }
+ * else if (inPublic.t.publicArea.nameAlg == TPM_ALG_SM3_256) {
+ *     keyName.t.size = SM3_256_DIGEST_SIZE + sizeof(TPMI_ALG_HASH); // 即 32 字节
+ * }
+ * else {
+ *     if (inPublic.t.publicArea.nameAlg == TPM_ALG_NULL) {
+ *         // 如果指定使用的哈希算法时填写的是 TPM_ALG_NULL
+ *         // 则 keyName.t.size 值可能取决于具体硬件或 Simulator 模拟器的具体实现
+ *     }
+ * }
+ * ```
+ *
+ * @note TPM2B_NAME and TPMU_NAME were only 2 wrapper layers of TPMT_HA.
+ *
+ * @see TPMT_HA: The true data structure inside TPM2B_NAME and TPMU_NAME.
+ *
+ * @see [TPM-Rev-2.0-Part-2-Structures-01.38.pdf](https://trustedcomputinggroup.org/wp-content/uploads/TPM-Rev-2.0-Part-2-Structures-01.38.pdf) ,
+ * Chapter 10.5.3
+ * Table 84: Definition of TPM2B_NAME Structure
+ */
+typedef union {
+    struct  {
+        UINT16 size;
+        BYTE name[sizeof(TPMU_NAME)];
+    } t;
+    TPM2B b;
+} TPM2B_NAME;
