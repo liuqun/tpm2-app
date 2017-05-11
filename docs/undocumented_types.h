@@ -273,7 +273,7 @@ typedef union {
  *     &rspAuthsArray
  *     );
  *
- * TPM2B_PUBLIC& inPublic = keyPublic; // C++ coding syntax
+ * TPM2B_PUBLIC& inPublic = keyPublicResult; // C++ coding syntax
  *
  * // Call Tss2_Sys_Load()
  * Tss2_Sys_Load(
