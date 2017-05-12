@@ -146,6 +146,79 @@ typedef	union {
 } TPM2B_SENSITIVE;
 
 /**
+ * Wrapper of TPMS_SENSITIVE_CREATE
+ *
+ * @details 此结构体和 TPMS_SENSITIVE_CREATE 仅用于设置:
+ * 1. 密钥节点的访问授权信息 TPM2B_AUTH userAuth, 长度不能超过密钥树节点名称中哈希摘要的长度
+ * 2. 敏感数据 TPMS_SENSITIVE_DATA data
+ * @see TPM2B_AUTH
+ * @see TPM2B_SENSITIVE_DATA
+ *
+ * ```
+ * // Pseudo-code showing the usage of TPM2B_SENSITIVE_CREATE
+ * void foobar(const char *password)
+ * {
+ *     TPM2B_SENSITIVE_CREATE inSensitive;
+ *
+ *     inSensitive.t.sensitive.userAuth.t.size = strlen(password);
+ *     memcpy(inSensitive.t.sensitive.userAuth.t.buffer, password, inSensitive.t.sensitive.userAuth.t.size);
+ *     inSensitive.t.sensitive.data.t.size = 0;
+ *
+ *     // ...
+ *
+ *     Tss2_Sys_Create(
+ *         sysContext,
+ *         parentHandle,
+ *         &cmdAuthsArray,
+ *         &inSensitive,  // Here TPM2B_SENSITIVE_CREATE is used as an input parameter
+ *         &inPublic,
+ *         &outsideInfo,
+ *         &creationPCR,
+ *         &outPrivate, // 前面输入的密码字段 userAuth 被 TPM 解析后, 回传到输出参数 outPrivate.buffer[sizeof(_PRIVATE)] 内部.
+ *         &outPublic,
+ *         &creationData,
+ *         &creationHash,
+ *         &creationTicket,
+ *         &rspAuthsArray
+ *         );
+ *     return;
+ * }
+ * ```
+ *
+ * @see Tss2_Sys_Create() / Tss2_Sys_CreatePrimary()
+ * @see TPMS_SENSITIVE_CREATE / TPM2B_AUTH / TPM2B_SENSITIVE_DATA
+ * @see 如何从 TPM2B_PRIVATE 中解析 _PRIVATE::sensitive.sensitiveArea.authValue 字段
+ * @see [TPM-Rev-2.0-Part-2-Structures-01.38.pdf](https://trustedcomputinggroup.org/wp-content/uploads/TPM-Rev-2.0-Part-2-Structures-01.38.pdf) ,
+ * Chapter 11.1.15
+ * Table 138: Definition of TPM2B_SENSITIVE_CREATE Structure
+ */
+typedef union {
+    struct {
+        UINT16 size; ///< @note This size indicator will always be ignored by Tss2_Sys_Create() / Tss2_Sys_CreatePrimary().
+        TPMS_SENSITIVE_CREATE sensitive;
+    } t;
+    TPM2B b;
+} TPM2B_SENSITIVE_CREATE;
+
+/**
+ * Member field of TPMS_SENSITIVE_CREATE:
+ * May be a symmetric key (1024 bit) or some sealed data (128 bytes).
+ *
+ * @see Bit-field sensitiveDataOrigin in TPMA_OBJECT objectAttribuites (a member field of TPMT_PUBLIC/TPM2B_PUBLIC)
+ * @see Tss2_Sys_Create() / Tss2_Sys_CreatePrimary()
+ * @see [TPM-Rev-2.0-Part-2-Structures-01.38.pdf](https://trustedcomputinggroup.org/wp-content/uploads/TPM-Rev-2.0-Part-2-Structures-01.38.pdf) ,
+ * Chapter 11.1.14
+ * Table 138: Definition of TPM2B_SENSITIVE_DATA Structure
+ */
+typedef union {
+    struct {
+        UINT16 size;
+        BYTE buffer[MAX_SYM_DATA];
+    } t;
+    TPM2B b;
+} TPM2B_SENSITIVE_DATA;
+
+/**
  * TPM 2.0 key creation private data storage structure
  * (with a UINT16 size indicator)
  *
