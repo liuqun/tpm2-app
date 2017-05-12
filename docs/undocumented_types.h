@@ -438,3 +438,52 @@ typedef union {
     } t;
     TPM2B b;
 } TPM2B_CREATION_DATA;
+
+/**
+ * The addtional outside information field.
+ *
+ * TPM2B_DATA was used by Tss2_Sys_Create() / Tss2_Sys_CreatePrimary() as an input parameter.
+ * And in the meanwhile, it will be then placed in TPM2B_CREATION_DATA/TPMS_CREATION_DATA of these API functions as an output field.
+ * @note Only used to append outside informations to TPMS_CREATION_DATA before generating key names.
+ *
+ * ```
+ * // Typical usage:
+ * TPM2B_DATA outsideInfo;
+ *
+ * outsideInfo.t.size = 0;
+ * // Or:
+ * // outsideInfo.t.size = sizeof(TPMT_HA);
+ * // TPM2B_NAME external = ...;
+ * // memcpy(outsideInfo.t.buffer, external.t.name, sizeof(TPMT_HA));
+ *
+ * Tss2_Sys_Create(
+ *     sysContext,
+ *     parentHandle,
+ *     &cmdAuthsArray,
+ *     &inSensitive,
+ *     &inPublic,
+ *     &outsideInfo, // TPM2B_DATA is used as an input parameter of TPM2_Create() and TPM2_CreatePrimary()
+ *     &creationPCR,
+ *     &outPrivate,
+ *     &outPublic,
+ *     &creationData,
+ *     &creationHash,
+ *     &creationTicket,
+ *     &rspAuthsArray
+ *     );
+ * TPM2B_DATA *out = &(creationData.outsideInfo);
+ * printf("out->t.size = %d\n", out->t.size);
+ * ```
+ *
+ * @note Both TPM2B_DATA and TPM2B_NAME are wrapper structures for TPMT_HA.
+ * @see TPMT_HA
+ * @see Tss2_Sys_Create() / Tss2_Sys_CreatePrimary()
+ * @see TPMS_CREATION_DATA / TPM2B_CREATION_DATA
+ */
+typedef union {
+    struct  {
+        UINT16 size;
+        BYTE buffer[sizeof(TPMT_HA)];
+    } t;
+    TPM2B b;
+} TPM2B_DATA;
