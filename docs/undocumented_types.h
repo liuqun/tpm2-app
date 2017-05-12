@@ -560,3 +560,58 @@ typedef union {
     } t;
     TPM2B b;
 } TPM2B_DATA;
+
+/**
+ * RSA 私钥
+ */
+typedef union {
+    struct {
+        UINT16 size; ///< 取值范围 (0, MAX_RSA_KEY_BYTES/2] 字节
+        BYTE buffer[MAX_RSA_KEY_BYTES/2];
+    } t;
+    TPM2B b;
+} TPM2B_PRIVATE_KEY_RSA;
+
+/**
+ * RSA 公钥
+ */
+typedef union {
+    struct {
+        UINT16 size; ///< 取值范围 (0, MAX_RSA_KEY_BYTES] 字节
+        BYTE buffer[MAX_RSA_KEY_BYTES];
+    } t;
+    TPM2B b;
+} TPM2B_PUBLIC_KEY_RSA;
+
+/**
+ * ECC 密钥椭圆曲线方程参数(私钥)
+ */
+typedef union {
+    struct {
+        UINT16 size; ///< 取值范围 (0, MAX_ECC_KEY_BYTES] 字节
+        BYTE buffer[MAX_ECC_KEY_BYTES];
+    } t;
+    TPM2B b;
+} TPM2B_ECC_PARAMETER;
+
+/**
+ * ECC 密钥椭圆曲线坐标点(公钥)
+ */
+typedef union {
+    struct {
+        UINT16 size;
+        TPMS_ECC_POINT point;
+    } t;
+    TPM2B b;
+} TPM2B_ECC_POINT;
+
+/**
+ * 对称密钥
+ */
+typedef union {
+    struct {
+        UINT16 size; ///< 取值范围 (0, MAX_SYM_KEY_BYTES] 字节
+        BYTE buffer[MAX_SYM_KEY_BYTES];
+    } t;
+    TPM2B b;
+} TPM2B_SYM_KEY;
