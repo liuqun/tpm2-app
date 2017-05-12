@@ -15,22 +15,34 @@
 * @note 关于 SHA1 哈希算法的详细描述和实现代码请查阅 RFC3174
 * @see https://tools.ietf.org/html/rfc3174
 *
-* @example example.cpp
-* 库函数调用方法请参考相应目录下的示例文件: example.cpp
+* 库函数调用方法请参考相应目录下的示例程序:
+* @example example.c 是一个 C 语言示例程序
+* @example example.cpp 是一个 C++ 语言示例程序
 */
 
 #ifndef _SHA1_H_
 #define _SHA1_H_
+
+#if (defined(__GNUC__) || (defined(_MSC_VER) && (_MSC_VER >= 1600)))
 #include <stdint.h>
+/*
+* GCC 始终支持 <stdint.h>
+* Mircrosoft Visual Studio 2010 以上版本(_MSC_VER >= 1600)才支持 C99 标准 <stdint.h>
+*/
+#else
 /*
 * If you do not have the ISO standard stdint.h header file, then you
 * must typdef the following:
 * name meaning
 * uint32_t unsigned 32 bit integer
 * uint8_t unsigned 8 bit integer (i.e., unsigned char)
-* int_least16_t integer of >= 16 bits
 *
 */
+#include <windef.h>
+typedef BYTE uint8_t;
+typedef DWORD uint32_t;
+#endif
+
 #ifndef _SHA_enum_
 #define _SHA_enum_
 /**
@@ -49,18 +61,7 @@ enum
 * This structure will hold context information for the SHA-1
 * hashing operation
 */
-typedef struct
-{
-	uint32_t Intermediate_Hash[SHA1HashSize/4]; ///< Message Digest
-	uint32_t Length_Low; ///< Message length in bits
-	uint32_t Length_High; ///< Message length in bits
-	/** Index into message block array */
-	int_least16_t Message_Block_Index;
-	uint8_t Message_Block[64]; ///< 512-bit message blocks
-	int Computed; ///< Is the digest computed?
-	int Corrupted; ///< Is the message digest corrupted?
-} SHA1Context;
-
+typedef struct _SHA1Context SHA1Context;
 
 /*
 * Function Prototypes
@@ -99,9 +100,21 @@ int SHA1Result(
 		uint8_t Message_Digest[SHA1HashSize] ///< 输出 SHA1HashSize=20 字节哈希摘要
 		);
 
+/**
+ * 创建 SHA1 上下文对象
+ *
+ * @return 指针, 指向新创建的上下文对象
+ */
+SHA1Context *SHA1CreateNewContext();
+
+/**
+ * 删除 SHA1 上下文对象
+ */
+void SHA1DeleteContext(SHA1Context *context ///< 上下文指针
+		);
+
 #ifdef __cplusplus
 }
 #endif//__cplusplus
-
 
 #endif

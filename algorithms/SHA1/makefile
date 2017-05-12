@@ -11,21 +11,29 @@ CXXFLAGS = $(CFLAGS)
 INCLUDE = -I.
 
 
-OBJS := SHA1.o 
-OBJS += example.o 
+OBJS := SHA1.o
+TARGET_1_OBJS += example_c.o
+TARGET_2_OBJS += example_cpp.o
 
-TARGET_1 = example
+TARGET_1 = example_c
+TARGET_2 = example_cpp
 
-all: $(TARGET_1)
+all: $(TARGET_1) $(TARGET_2)
 
-$(TARGET_1): $(OBJS)
-	$(CXX) $(LDFLAGS) $^ -o $(TARGET_1) $(LIBS)
+$(TARGET_1): $(OBJS) $(TARGET_1_OBJS)
+	$(CXX) $(LDFLAGS) $^ -o $@ $(LIBS)
 
-SHA1.o : SHA1.c SHA1.h
-	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@ 
+$(TARGET_2): $(OBJS) $(TARGET_2_OBJS)
+	$(CXX) $(LDFLAGS) $^ -o $@ $(LIBS)
 
-example.o : example.cpp SHA1.h
-	$(CXX) $(CXXFLAGS) $(INCLUDE) -c $< -o $@ 
+SHA1.o : SHA1.cpp SHA1.h
+	$(CXX) $(CXXFLAGS) $(INCLUDE) -c $< -o $@
+
+example_c.o : example.c SHA1.h
+	$(CC) $(CXXFLAGS) $(INCLUDE) -c $< -o $@
+
+example_cpp.o : example.cpp SHA1.h
+	$(CXX) $(CXXFLAGS) $(INCLUDE) -c $< -o $@
 
 clean:
-	rm -rf $(OBJS) $(TARGET_1)
+	rm -rf $(OBJS) $(TARGET_1_OBJS) $(TARGET_2_OBJS) $(TARGET_1) $(TARGET_2)
