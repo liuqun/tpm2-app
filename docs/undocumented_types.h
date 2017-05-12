@@ -384,3 +384,57 @@ typedef union {
     } t;
     TPM2B b;
 } TPM2B_NAME;
+
+/**
+ * TPM 2.0 key creation data wrapper structure.
+ *
+ * @details
+ * This structure is an output parameter created by TPM2_Create() and
+ * TPM2_CreatePrimary(). TPM2B_CREATION_DATA that created by those API functions
+ * should always have a non-zero size.
+ *
+ * The contents of TPMS_CREATION_DATA will NEVER be entered into or be saved by
+ * the TPM.
+ *
+ * ```
+ * //Pseudo-code showing the usage of TPM2B_CREATION_DATA
+ * TPM2B_CREATION_DATA creationData; // NOTE: 不需要初始化
+ *
+ * TSS2_RC err = Tss2_Sys_Create(
+ *     sysContext,
+ *     parentHandle,
+ *     &cmdAuthsArray,
+ *     &inSensitive,
+ *     &inPublic,
+ *     &outsideInfo,
+ *     &creationPCR,
+ *     &outPrivate,
+ *     &outPublic,
+ *     &creationData, // TPM2B_CREATION_DATA is always used as an output parameter of TPM2_Create() and TPM2_CreatePrimary()
+ *     &creationHash,
+ *     &creationTicket,
+ *     &rspAuthsArray
+ *     );
+ * if (err) {
+ *     return;
+ * }
+ * printf("creationData.t.size = %d\n", creationData.t.size);  // 由 TPM 输出的 creationData.t.size 正常情况应该大于 0
+ * ```
+ *
+ * @see TPMS_CREATION_DATA: 即 TPM2B_CREATION_DATA 的实际内容结构体
+ *
+ * @see Tss2_Sys_Create() / Tss2_Sys_CreatePrimary()
+ *
+ * @see Tss2_Sys_Load() / TPM2B_NAME
+ *
+ * @see [TPM-Rev-2.0-Part-2-Structures-01.38.pdf](https://trustedcomputinggroup.org/wp-content/uploads/TPM-Rev-2.0-Part-2-Structures-01.38.pdf) ,
+ * Chapter 15.2
+ * Table 213: Definition of TPM2B_CREATION_DATA Structure
+ */
+typedef union {
+    struct  {
+        UINT16 size;
+        TPMS_CREATION_DATA creationData;
+    } t;
+    TPM2B b;
+} TPM2B_CREATION_DATA;
