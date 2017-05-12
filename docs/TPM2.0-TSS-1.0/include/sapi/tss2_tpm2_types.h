@@ -1943,13 +1943,13 @@ typedef	struct {
 
 /* Table 205  Definition of TPMS_CREATION_DATA Structure <OUT> */
 typedef	struct {
-	TPML_PCR_SELECTION	pcrSelect;	 /* list indicating the PCR included in pcrDigest  */
-	TPM2B_DIGEST	pcrDigest;	 /* digest of the selected PCR using nameAlg of the object for which this structure is being createdpcrDigest.size shall be zero if the pcrSelect list is empty.  */
-	TPMA_LOCALITY	locality;	 /* the locality at which the object was created  */
-	TPM_ALG_ID	parentNameAlg;	 /* nameAlg of the parent  */
-	TPM2B_NAME	parentName;	 /* Name of the parent at time of creationThe size will match digest size associated with parentNameAlg unless it is TPM_ALG_NULL in which case the size will be 4 and parentName will be the hierarchy handle.  */
-	TPM2B_NAME	parentQualifiedName;	 /* Qualified Name of the parent at the time of creationSize is the same as parentName.  */
-	TPM2B_DATA	outsideInfo;	 /* association with additional information added by the key creatorThis will be the contents of the outsideInfo parameter in TPM2_Create or TPM2_CreatePrimary.  */
+	TPML_PCR_SELECTION	pcrSelect; ///< list indicating the PCR included in pcrDigest
+	TPM2B_DIGEST	pcrDigest; ///< digest of the selected PCR using nameAlg of the object for which this structure is being created. pcrDigest.size shall be zero if the pcrSelect list is empty.
+	TPMA_LOCALITY	locality; ///< the locality at which the object was created
+	TPM_ALG_ID	parentNameAlg; ///< nameAlg of the parent
+	TPM2B_NAME	parentName; ///< Name of the parent at time of creationThe size will match digest size associated with parentNameAlg unless it is TPM_ALG_NULL in which case the size will be 4 and parentName will be the hierarchy handle.
+	TPM2B_NAME	parentQualifiedName; ///< Qualified Name of the parent at the time of creationSize is the same as parentName.
+	TPM2B_DATA	outsideInfo; ///< association with additional information added by the key creatorThis will be the contents of the outsideInfo parameter in TPM2_Create or TPM2_CreatePrimary.
 } TPMS_CREATION_DATA;
 
 /* Table 206  Definition of TPM2B_CREATION_DATA Structure <OUT> */
