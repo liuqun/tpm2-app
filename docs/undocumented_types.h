@@ -563,6 +563,11 @@ typedef union {
 
 /**
  * RSA 私钥
+ *
+ * @note 存储 RSA 私钥和公钥的结构体分别是 TPM2B_PRIVATE_KEY_RSA 和 TPM2B_PUBLIC_KEY_RSA
+ * @details
+ * 通常 RSA 私钥的长度应为公钥长度的一半.
+ * @see RSA 公钥: TPM2B_PUBLIC_KEY_RSA
  */
 typedef union {
     struct {
@@ -574,6 +579,12 @@ typedef union {
 
 /**
  * RSA 公钥
+ *
+ * @note 存储 RSA 私钥和公钥的结构体分别是 TPM2B_PRIVATE_KEY_RSA 和 TPM2B_PUBLIC_KEY_RSA
+ * @details
+ * 通常 RSA 公钥长度是私钥长度的两倍.
+ * @see RSA 公钥最大长度: MAX_RSA_KEY_BITS / MAX_RSA_KEY_BYTES
+ * @see RSA 私钥: TPM2B_PRIVATE_KEY_RSA
  */
 typedef union {
     struct {
@@ -585,6 +596,12 @@ typedef union {
 
 /**
  * ECC 密钥椭圆曲线方程参数(私钥)
+ *
+ * @details
+ * 用于存储椭圆曲线方程参数(另外, 此结构体兼用于存储曲线方程公钥坐标点中 x 或 y 值)
+ *
+ * @see 椭圆曲线方程参数(私钥)最大长度: MAX_ECC_KEY_BITS / MAX_ECC_KEY_BYTES
+ * @see 椭圆曲线坐标点(公钥): TPM2B_ECC_POINT
  */
 typedef union {
     struct {
@@ -596,6 +613,12 @@ typedef union {
 
 /**
  * ECC 密钥椭圆曲线坐标点(公钥)
+ *
+ * @details
+ * Just a TPM2B_* wrapper layer of TPMS_ECC_POINT.
+ *
+ * @see 椭圆曲线坐标点: TPMS_ECC_POINT
+ * @see 椭圆曲线方程参数(私钥): TPM2B_ECC_PARAMETER
  */
 typedef union {
     struct {
@@ -607,6 +630,8 @@ typedef union {
 
 /**
  * 对称密钥
+ *
+ * @see 对称密钥最大长度: MAX_SYM_KEY_BITS / MAX_SYM_KEY_BYTES
  */
 typedef union {
     struct {
