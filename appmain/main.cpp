@@ -235,11 +235,10 @@ extern "C"
 static size_t GetSocketTctiContextSize()
 {
     TCTI_SOCKET_CONF emptyConf;
-    const uint8_t noSeverSockets = 0;
     size_t size;
     TSS2_RC err;
 
-    err = InitSocketTcti(NULL, &size, &emptyConf, noSeverSockets);
+    err = InitSocketTcti(NULL, &size, &emptyConf, 0);
     if (err)
     {
         fprintf(stderr,
