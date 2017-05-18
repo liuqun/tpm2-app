@@ -74,8 +74,19 @@ public:
      */
     void fetchResponse(int32_t timeout=-1 ///< 超时选项. 默认使用负数表示阻塞等待, 直到服务器端相应或者发生严重错误
             );
-    /** 切断与 TPM resource manager 之间的连接 */
-    void disconnectResourceManager();
+    /**
+     * 切断与守护进程之间的通讯连接
+     *
+     * @details
+     * 优雅地切断之前建立的任意 socket 连接(通常是与 TSS resource manager 守护进程之间的链接)
+     * 底层调用 shutdown() 通知对方正常结束会话连接(connection), 然后调用 closesocket() 关闭本地套接字.
+     *
+     * @todo `#include "MyAppExceptions.hpp"` 分类处理运行时可能抛出的 C++ 异常类型
+     * @throws MyAppExceptions::UnableToShutdownConnetion
+     * @throws MyAppExceptions::UnableToCloseSocket
+     * @throws std::exception
+     */
+    void disconnect();
 };
 
 #include <exception>
@@ -148,7 +159,7 @@ int main(int argc, char *argv[])
     }
     delete shutdown;
     // 测试结束需要手动切断与 TSS resource manager 之间的连接
-    framework.disconnectResourceManager();
+    framework.disconnect();
     return (0);
 }
 
@@ -259,7 +270,7 @@ void MyAppFramework::fetchResponse(int32_t timeout)
     }
 }
 
-void MyAppFramework::disconnectResourceManager()
+void MyAppFramework::disconnect()
 {
     assert(m_sysContext);
     Tss2_Sys_Finalize(m_sysContext);
