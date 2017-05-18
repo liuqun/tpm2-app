@@ -64,7 +64,7 @@ public:
     /** 与本地默认端口上运行的 TSS resource manager 守护进程建立连接 */
     void connectToDefaultLocalResourceManager();
     /** 与任意远程或本地 TSS resource manager 守护进程建立连接 */
-    void connectToResourceManager(const char *hostname=DEFAULT_HOSTNAME, uint16_t port=DEFAULT_RESMGR_TPM_PORT);
+    void connectToResourceManager(const char *hostname="127.0.0.1", uint16_t port=2323);
     /** 发送命令帧 */
     void sendCommand(TPMCommand *cmd);
     /**
