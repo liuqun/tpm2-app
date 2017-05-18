@@ -7,6 +7,7 @@ using namespace std;
 
 #include <sapi/tpm20.h>
 #include <tcti/tcti_socket.h>
+#include "TPMCommand.h"
 
 /* 排版格式: 以下函数均使用4个空格缩进，不使用Tab缩进 */
 
@@ -18,36 +19,7 @@ static void PrintHelp()
     printf("-rmport 手动指定运行资源管理器的主机端口号 (默认值: %d)\n", DEFAULT_RESMGR_TPM_PORT);
 }
 
-/// @class TPMCommand
-/// @details 所有 TPM 命令对象的抽象基类
-class TPMCommand
-{
-public:
-    TPMCommand()
-    {
-    }
-    virtual ~TPMCommand()
-    {
-    }
-};
-
-/// @namespace TPMCommands
-/// @details 盛放各种 TPM 命令对象
-namespace TPMCommands
-{
-
-class Startup: public TPMCommand
-{
-};
-
-class Shutdown: public TPMCommand
-{
-};
-
-}
-
-
-/// @class MyAppFreamework
+/// @class MyAppFramework
 /// @details
 class MyAppFramework
 {
@@ -66,13 +38,15 @@ public:
     /** 与任意远程或本地 TSS resource manager 守护进程建立连接 */
     void connectToResourceManager(const char *hostname="127.0.0.1", uint16_t port=2323);
     /** 发送命令帧 */
-    void sendCommand(TPMCommand *cmd);
+    void sendCommand(TPMCommand& cmd);
     /**
      * 取回应答帧
      *
      * @note 若该函数执行成功, 返回的数据将被写入之前调用 sendCommand() 时指定的 cmd 对象
      */
-    void fetchResponse(int32_t timeout=-1 ///< 超时选项. 默认使用负数表示阻塞等待, 直到服务器端相应或者发生严重错误
+    void fetchResponse(
+            TPMCommand& cmd, ///< 输出参数, 命令的执行结果会被存入相应的Parameters_Out子结构体
+            int32_t timeout=-1 ///< 超时选项. 默认使用负数表示阻塞等待, 直到服务器端相应或者发生严重错误
             );
     /**
      * 切断与守护进程之间的通讯连接
@@ -134,30 +108,30 @@ int main(int argc, char *argv[])
     framework.connectToResourceManager(hostname, port);
     // ----------------------------------
     printf("%s\n", "测试 Startup 命令");
-    TPMCommand *startup = new TPMCommands::Startup();
+    TPMCommands::Startup startup;
     try
     {
+        startup.disableRestoreSavedState();
         framework.sendCommand(startup);
-        framework.fetchResponse();
+        framework.fetchResponse(startup);
     }
     catch(std::exception& e)
     {
         fprintf(stderr, "Error: %s\n", e.what());
     }
-    delete startup;
     // ----------------------------------
     printf("%s\n", "测试 Shutdown 命令");
-    TPMCommand *shutdown = new TPMCommands::Shutdown();
+    TPMCommands::Shutdown shutdown;
     try
     {
+        shutdown.enbleRestoreSavedState();
         framework.sendCommand(shutdown);
-        framework.fetchResponse();
+        framework.fetchResponse(shutdown);
     }
     catch (std::exception& e)
     {
         fprintf(stderr, "Error: %s\n", e.what());
     }
-    delete shutdown;
     // 测试结束需要手动切断与 TSS resource manager 之间的连接
     framework.disconnect();
     return (0);
@@ -237,17 +211,9 @@ void MyAppFramework::connectToDefaultLocalResourceManager()
     connectToResourceManager();
 }
 
-void MyAppFramework::sendCommand(TPMCommand *cmd)
+void MyAppFramework::sendCommand(TPMCommand& cmd)
 {
-    // TODO: 解读 cmd 对象
-    // cmd.handle
-    // cmd.authSession
-    // cmd.authValue
-    // cmd.pushAuthSessionDecryptMethodOfCommandPacket 向 TPM 模块指明如何解码命令帧加密字段
-    // cmd.pushAuthSessionEncryptMethodOfResponsePacket 向 TPM 模块指明如何回传应答桢加密字段
-    // cmd.inputParameterList 输入参数列表
-    // cmd.outputParameterList 输出参数列表
-    // cmd.prepareFunc 作为函数指针, 指向相应的 TSS 软件栈 Tss2_Sys_XXXX_Prepare() 函数
+    cmd.buildCmdPacket(m_sysContext); // 调用相应的 TSS 软件栈 Tss2_Sys_XXXX_Prepare() 函数
 
     // 异步发送命令帧
     TSS2_RC err = Tss2_Sys_ExecuteAsync(m_sysContext);
@@ -257,7 +223,7 @@ void MyAppFramework::sendCommand(TPMCommand *cmd)
     }
 }
 
-void MyAppFramework::fetchResponse(int32_t timeout)
+void MyAppFramework::fetchResponse(TPMCommand& cmd, int32_t timeout)
 {
     if (timeout < 0)
     {
@@ -268,6 +234,7 @@ void MyAppFramework::fetchResponse(int32_t timeout)
     {
         // TODO: throw/raise an expection to the up level
     }
+    cmd.unpackRspPacket(m_sysContext); // 调用相应的 TSS 软件栈 Tss2_Sys_XXXX_Complete() 函数
 }
 
 void MyAppFramework::disconnect()

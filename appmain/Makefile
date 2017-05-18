@@ -26,7 +26,13 @@ CXXFLAGS := $(CFLAGS)
 COMPILE_c = $(COMPILE.c)
 COMPILE_cpp = $(COMPILE.cpp)
 
-main: main.o
+.PHONY: ALWAYS_REBUILD
+libplugin.a: ALWAYS_REBUILD
+	rm -f libplugin/$@
+	$(MAKE) -C libplugin $@
+	cp libplugin/$@ ./$@
+
+main: main.o libplugin.a
 	$(CXX) $(LD_FLAGS) -o $@ $^ $(LIBS)
 
 %.o: %.c %.h
@@ -43,6 +49,7 @@ main: main.o
 
 .PHONY: clean
 clean:
+	$(RM) libplugin.a
 	$(RM) *.o
 	$(RM) cscope.files cscope.out
 	$(RM) TAGS
