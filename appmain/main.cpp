@@ -120,6 +120,17 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Error: %s\n", e.what());
     }
     // ----------------------------------
+    printf("%s\n", "测试 NV DefineSpace 命令");
+    TPMCommands::NV::DefineSpace nvdef;
+    TPMI_RH_NV_INDEX idx = NV_INDEX_FIRST + 0x000020;
+    UINT16 size = 16;
+    nvdef.configNVIndex(idx);
+    nvdef.configNVIndexDataSize(size);
+    nvdef.configNVIndexAuthPassword("My password", 11);
+    nvdef.configCreatorAsOwner();
+    framework.sendCommand(nvdef);
+    framework.fetchResponse(nvdef);
+    // ----------------------------------
     printf("%s\n", "测试 Shutdown 命令");
     TPMCommands::Shutdown shutdown;
     try
