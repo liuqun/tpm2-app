@@ -195,7 +195,7 @@ void MyAppFramework::connectToResourceManager(const char *hostname, uint16_t por
     abiVersion.tssVersion = TSS_SAPI_FIRST_VERSION;
 
     TSS2_RC err2;
-    err = Tss2_Sys_Initialize(
+    err2 = Tss2_Sys_Initialize(
             m_sysContext,
             m_SystemAPIContextSize,
             m_tctiContext,
