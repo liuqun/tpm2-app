@@ -15,6 +15,11 @@ public:
     struct Parameters_In *m_in;
     struct Parameters_Out *m_out;
 public:
+    int m_cmdAuthsCount; ///< 记录命令帧携带的 AuthValue 个数, 取值范围: [0,3]
+    int m_rspAuthsCount; ///< 记录应答帧携带的 AuthValue 个数, 初始值应为 0, 执行完 unpackRspPacket() 之后会更新
+    TPMS_AUTH_COMMAND m_sendAuthValues[3];
+    TPMS_AUTH_RESPONSE m_fetchAuthResponse[3];
+public:
     TPMCommand();
     virtual void buildCmdPacket(TSS2_SYS_CONTEXT *ctx);
     virtual void unpackRspPacket(TSS2_SYS_CONTEXT *ctx);
