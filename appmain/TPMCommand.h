@@ -53,6 +53,29 @@ public:
     virtual ~Shutdown();
 };
 
+/// @namespace NV
+/// @details 盛放 NV 操作的命名空间.
+namespace NV {
+
+    /// 定义非易失性存储空间
+    /// @see Tss2_Sys_NV_DefineSpace()
+    class DefineSpace: public TPMCommand
+    {
+    public:
+        DefineSpace();
+        virtual void buildCmdPacket(TSS2_SYS_CONTEXT *ctx);
+        virtual ~DefineSpace();
+        void configNVIndex(TPMI_RH_NV_INDEX index);
+        void configNVIndexDataSize(UINT16 dataSize);
+        void configCreatorAsPlatform();
+        void configCreatorAsOwner();
+        void configNVIndexAuthPassword(
+                const void *authPassword, ///< 密码
+                UINT16 len ///< 密码长度
+                );
+    };
+
+}// end of namespace NV
 } // end of namecpace TPMCommands
 #endif//__cplusplus
 
