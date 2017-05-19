@@ -53,6 +53,16 @@ public:
     virtual ~Shutdown();
 };
 
+/// 读取密钥(或自定义Object)非敏感数据
+class ReadPublic: public TPMCommand
+{
+public:
+    ReadPublic();
+    virtual void buildCmdPacket(TSS2_SYS_CONTEXT *ctx);
+    virtual void unpackRspPacket(TSS2_SYS_CONTEXT *ctx);
+    virtual ~ReadPublic();
+};
+
 /// @namespace NV
 /// @details 盛放 NV 操作的命名空间.
 namespace NV {
