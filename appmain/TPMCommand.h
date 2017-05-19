@@ -85,6 +85,17 @@ namespace NV {
                 );
     };
 
+    /// 读取 NV 非敏感数据
+    /// @see Tss2_Sys_NV_ReadPublic()
+    class ReadPublic: public TPMCommand
+    {
+    public:
+        ReadPublic();
+        virtual void buildCmdPacket(TSS2_SYS_CONTEXT *ctx);
+        virtual void unpackRspPacket(TSS2_SYS_CONTEXT *ctx);
+        virtual ~ReadPublic();
+    };
+
 }// end of namespace NV
 } // end of namecpace TPMCommands
 #endif//__cplusplus
