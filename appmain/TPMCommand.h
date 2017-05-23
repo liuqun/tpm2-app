@@ -92,14 +92,40 @@ namespace NV {
     };
 
     /// 读取 NV 非敏感数据
-    /// @see Tss2_Sys_NV_ReadPublic()
     class ReadPublic: public TPMCommand
+    /// @details
+    /// ```
+    /// // 用法示意(伪代码):
+    /// TPMCommands::NV::ReadPublic cmd;
+    ///
+    /// cmd.configNVIndex((TPMI_RH_NV_INDEX) 0x015000020); // 假定之前已经创建了 NV Index 0x015000020
+    /// cmd.buildCmdPacket(sysContext);
+    /// Tss2_Sys_Execute(sysContext);
+    /// cmd.unpackRspPacket(sysContext);
+    /// TPMS_NV_PUBLIC& pub = cmd.resultNVPublicArea();
+    /// TPMU_NAME& name = cmd.resultNVName();
+    /// ```
     {
     public:
         ReadPublic();
         virtual void buildCmdPacket(TSS2_SYS_CONTEXT *ctx);
         virtual void unpackRspPacket(TSS2_SYS_CONTEXT *ctx);
         virtual ~ReadPublic();
+        /** 指定要访问的 NV Index */
+        void configNVIndex(TPMI_RH_NV_INDEX index);
+        /**
+         * 输出查询结果中的 NV 公开信息区域
+         * @see TPMS_NV_PUBLIC / TPM2B_NV_PUBLIC
+         */
+        const TPMS_NV_PUBLIC& resultNVPublicArea();
+        /**
+         * 输出查询结果中的 NV 对象名
+         * @see TPMU_NAME / TPM2B_NAME
+         * @see TPMT_HA
+         */
+        const TPMU_NAME& resultNVName();
+        /** 擦除所有临时缓存的输出数据, 前两个成员函数的返回值也会被清零 */
+        void eraseCachedOutputData();
     };
 
     /// 写入 NV 数据
