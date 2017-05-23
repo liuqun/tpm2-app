@@ -83,6 +83,12 @@ namespace NV {
                 const void *authPassword, ///< 密码
                 UINT16 len ///< 密码长度
                 );
+        /**
+         * 擦除之前配置的密码
+         *
+         * @details 程序退出前通过析构函数自动调用本函数, 擦除 C++ 对象运行时内存中残留的密码数据
+         */
+        void eraseNVIndexAuthPassword();
     };
 
     /// 读取 NV 非敏感数据
