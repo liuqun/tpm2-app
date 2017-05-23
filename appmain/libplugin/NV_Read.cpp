@@ -145,5 +145,5 @@ const TPM2B& NV::Read::result() {
 // 擦除临时缓存的输出数据
 // ============================================================================
 void NV::Read::eraseCachedOutputData(){
-    memset(&m_out, 0x00, sizeof(m_out));
+    memset(m_out, 0x00, sizeof(*m_out));
 }
