@@ -77,13 +77,15 @@ void NV::DefineSpace::configNVIndexAuthPassword(
 }
 
 void NV::DefineSpace::buildCmdPacket(TSS2_SYS_CONTEXT *ctx) {
-    // 显式调用父类的成员函数, 设置命令帧的 auth value
-    this->TPMCommand::buildCmdPacket(ctx);
     // 调用 API
     Tss2_Sys_NV_DefineSpace_Prepare(ctx,
             m_in->authHandle,
             &m_in->auth,
             &m_in->publicInfo);
+    // 最后通过显式调用父类的成员函数, 设置命令帧的 auth value
+    this->TPMCommand::buildCmdPacket(ctx);
+    // @note 必须在调用 API 函数 Tss2_Sys_NV_DefineSpace_Prepare() 填写了输入参数之后才能调用 TPMCommand::buildCmdPacket(), 因 buildCmdPacket() 将在其内部调用 Tss2_Sys_SetCmdAuths(),
+    // 这是由于底层 API 接口设计不良导致的, 我们作为二次开发者调用这些 API 时次序必须严格满足底层 API 的要求
 }
 
 NV::DefineSpace::~DefineSpace() {

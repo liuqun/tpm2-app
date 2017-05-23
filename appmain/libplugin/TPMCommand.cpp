@@ -32,7 +32,15 @@ void TPMCommand::buildCmdPacket(TSS2_SYS_CONTEXT *ctx) {
             cmdAuthsArray.cmdAuthsCount++;
             cmdAuthsArray.cmdAuths[i] = &(m_sendAuthValues[i]);
         }
-        Tss2_Sys_SetCmdAuths(ctx, &cmdAuthsArray);
+        TSS2_RC err = Tss2_Sys_SetCmdAuths(ctx, &cmdAuthsArray);
+        if (err) {
+            // TODO: 此处应抛出异常
+            if (TSS2_SYS_RC_BAD_SEQUENCE == err) {
+                // @note: 底层 API Tss2_Sys_SetCmdAuths() 内部设置的函数调用顺序检查过于严格,
+                // 不允许用户在调用 *_Prepare() 函数之前先调用 SetCmdAuths(),
+                // 笔者认为底层 API 接口的这种设计细节并无实际益处, 徒增障碍, 降低了底层 API 接口的易用性
+            }
+        }
     }
 }
 
