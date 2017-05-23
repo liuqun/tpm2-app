@@ -5,6 +5,8 @@
 #ifndef TPM_COMMAND_H_
 #define TPM_COMMAND_H_
 
+#include <sapi/tpm20.h>
+
 #ifdef __cplusplus
 
 /// @class TPMCommand
