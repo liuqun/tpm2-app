@@ -29,9 +29,10 @@ public:
 };
 
 /// @namespace TPMCommands
-/// @details 盛放各种 TPM 命令对象的命名空间.
+/// @brief 盛放各种 TPM 命令对象的命名空间.
+namespace TPMCommands
 /// @see 用法参见相应目录下的 example 示例程序
-namespace TPMCommands {
+{
 
 /// 开机
 class Startup: public TPMCommand
@@ -65,13 +66,13 @@ public:
     virtual ~ReadPublic();
 };
 
-/// @namespace NV
-/// @details 盛放 NV 操作的命名空间.
-namespace NV {
+namespace NV
+/// @brief 盛放与非易失性存储器相关的读写命令的命名空间.
+{
 
     /// 定义非易失性存储空间
-    /// @see Tss2_Sys_NV_DefineSpace()
     class DefineSpace: public TPMCommand
+    /// @see Tss2_Sys_NV_DefineSpace()
     {
     public:
         DefineSpace();
