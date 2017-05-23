@@ -102,6 +102,82 @@ namespace NV {
         virtual ~ReadPublic();
     };
 
+    /// 写入 NV 数据
+    class Write: public TPMCommand
+    {
+    public:
+        Write();
+        virtual ~Write();
+        virtual void buildCmdPacket(TSS2_SYS_CONTEXT *ctx);
+        virtual void unpackRspPacket(TSS2_SYS_CONTEXT *ctx);
+        /** 指定要写入的 NV Index 及写入位置起始偏移量 */
+        void configNVIndex(
+                TPMI_RH_NV_INDEX index, ///< Index
+                UINT16 offset ///< 起始偏移量
+                );
+        /** 指定要写入的数据 */
+        void configInputData(
+                const void *data, ///< 数据块指针
+                UINT16 length ///< 数据长度(单位: 字节), 取值范围: [0, MAX_NV_BUFFER_SIZE]
+                );
+        /** 擦除临时缓存的输入数据 */
+        void eraseCachedInputData();
+        /** 指定授权方式会话 */
+        void configNVIndexAuthSession(
+                TPMI_SH_AUTH_SESSION authSessionHandle=TPM_RS_PW ///< 会话句柄, 可选取值包括: 明文密码授权会话句柄 TPM_RS_PW, 其他 HMAC/Policy 会话句柄
+                );
+        /** 指定密码授权会话使用的密码 */
+        void configNVIndexPassword(
+                const void *password, ///< 句柄授权数据
+                UINT16 length ///< 授权数据长度
+                );
+        /**
+         * 擦除访问为了 NV Index 而临时缓存的密码
+         *
+         * @details 程序退出前析构函数将自动调用本函数, 擦除 C++ 对象运行时内存中残留的密码数据
+         */
+        void eraseCachedPassword();
+    };
+
+    /// 读取 NV 数据()
+    class Read: public TPMCommand
+    {
+    public:
+        Read();
+        virtual ~Read();
+        virtual void buildCmdPacket(TSS2_SYS_CONTEXT *ctx);
+        virtual void unpackRspPacket(TSS2_SYS_CONTEXT *ctx);
+        /** 输出读取 NV 的最终结果 */
+        const TPM2B& result();
+        /** 指定要读的 NV Index 以及起始偏移量和数据字节数 */
+        void configNVIndex(
+                TPMI_RH_NV_INDEX index, ///< Index
+                UINT16 dataSize, ///< 数据字节数
+                UINT16 offset ///< 起始偏移量
+                );
+        /** 指定授权方式会话 */
+        void configNVIndexAuthSession(
+                TPMI_SH_AUTH_SESSION authSessionHandle=TPM_RS_PW ///< 会话句柄, 可选取值包括: 明文密码授权会话句柄 TPM_RS_PW, 其他 HMAC/Policy 会话句柄
+                );
+        /** 指定密码授权会话使用的密码 */
+        void configNVIndexPassword(
+                const void *password, ///< 句柄授权数据
+                UINT16 length ///< 授权数据长度
+                );
+        /**
+         * 擦除访问为了 NV Index 而临时缓存的密码
+         *
+         * @details 程序退出前析构函数将自动调用本函数, 擦除 C++ 对象运行时内存中残留的密码数据
+         */
+        void eraseCachedPassword();
+        /**
+         * 擦除临时缓存的 NV Index 数据
+         *
+         * @details 程序退出前析构函数将自动调用本函数, 擦除 C++ 对象运行时内存中残留的密码数据
+         */
+        void eraseCachedOutputData();
+    };
+
 }// end of namespace NV
 } // end of namecpace TPMCommands
 #endif//__cplusplus
