@@ -16,6 +16,12 @@
 /** TPM2B_NAME--TPMU_NAME 数据类型转换函数 */
 const TPMU_NAME& ValueFromTPM2B(const TPM2B_NAME& name);
 
+/** TPM2B--BYTE 数据类型转换函数 */
+const BYTE *ValueFromTPM2B(const TPM2B& data);
+
+/** TPM2B_MAX_NV_BUFFER--BYTE 数据类型转换函数 */
+const BYTE *ValueFromTPM2B(const TPM2B_MAX_NV_BUFFER& block);
+
 #endif//__cplusplus
 
 // ============================================================================
@@ -28,6 +34,12 @@ extern "C" {
 
 /** TPM2B_NAME--TPMU_NAME 数据类型转换函数 */
 const TPMU_NAME *TPMU_NAME__From__TPM2B_NAME(const TPM2B_NAME *pName);
+
+/** TPM2B--BYTE 数据类型转换函数 */
+const BYTE *BYTE__From__TPM2B(const TPM2B *pData);
+
+/** TPM2B_MAX_NV_BUFFER--BYTE 数据类型转换函数 */
+const BYTE *BYTE__From__TPM2B_MAX_NV_BUFFER(const TPM2B_MAX_NV_BUFFER *pBlock);
 
 #ifdef __cplusplus
 } // End of extern "C"
