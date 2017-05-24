@@ -7,6 +7,32 @@
 
 #include <sapi/tpm20.h>
 
+// ============================================================================
+// 提供一组 TPM2B_* 数据转换工具(C++ 接口)
+// ============================================================================
+
+#ifdef __cplusplus
+
+/** TPM2B_NAME--TPMU_NAME 数据类型转换函数 */
+const TPMU_NAME& ValueFromTPM2B(const TPM2B_NAME& name);
+
+#endif//__cplusplus
+
+// ============================================================================
+// 提供一组 TPM2B_* 数据转换工具(C 接口)
+// ============================================================================
+
+#ifdef __cplusplus
+extern "C" {
+#endif//__cplusplus
+
+/** TPM2B_NAME--TPMU_NAME 数据类型转换函数 */
+const TPMU_NAME *TPMU_NAME__From__TPM2B_NAME(const TPM2B_NAME *pName);
+
+#ifdef __cplusplus
+} // End of extern "C"
+#endif//__cplusplus
+
 #ifdef __cplusplus
 
 /// @class TPMCommand
@@ -106,7 +132,8 @@ namespace NV
     /// Tss2_Sys_Execute(sysContext);
     /// cmd.unpackRspPacket(sysContext);
     /// TPMS_NV_PUBLIC& pub = cmd.resultNVPublicArea();
-    /// TPMU_NAME& name = cmd.resultNVName();
+    /// TPM2B_NAME& name = cmd.resultNVName();
+    /// TPMU_NAME& nameValue = ValueFromTPM2B(name);
     /// ```
     {
     public:
@@ -126,7 +153,7 @@ namespace NV
          * @see TPMU_NAME / TPM2B_NAME
          * @see TPMT_HA
          */
-        const TPMU_NAME& resultNVName();
+        const TPM2B_NAME& resultNVName();
         /** 擦除所有临时缓存的输出数据, 前两个成员函数的返回值也会被清零 */
         void eraseCachedOutputData();
     };

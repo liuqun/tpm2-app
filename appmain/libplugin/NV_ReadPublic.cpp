@@ -91,8 +91,8 @@ const TPMS_NV_PUBLIC& NV::ReadPublic::resultNVPublicArea() {
 // ============================================================================
 // 输出读取结果的第二部分 NV Name
 // ============================================================================
-const TPMU_NAME& NV::ReadPublic::resultNVName() {
-    return *((TPMU_NAME *) (m_out->nvName.t.name));
+const TPM2B_NAME& NV::ReadPublic::resultNVName() {
+    return m_out->nvName;
 }
 
 // ============================================================================
