@@ -250,8 +250,8 @@ namespace NV
     /// cmd.buildCmdPacket(sysContext);
     /// Tss2_Sys_Execute(sysContext);
     /// cmd.unpackRspPacket(sysContext);
-    /// TPMS_NV_PUBLIC& pub = cmd.resultNVPublicArea();
-    /// TPM2B_NAME& name = cmd.resultNVName();
+    /// TPMS_NV_PUBLIC& pub = cmd.outNVPublicArea();
+    /// TPM2B_NAME& name = cmd.outNVName();
     /// TPMU_NAME& nameValue = ValueFromTPM2B(name);
     /// ```
     {
@@ -266,13 +266,13 @@ namespace NV
          * 输出查询结果中的 NV 公开信息区域
          * @see TPMS_NV_PUBLIC / TPM2B_NV_PUBLIC
          */
-        const TPMS_NV_PUBLIC& resultNVPublicArea();
+        const TPMS_NV_PUBLIC& outNVPublicArea();
         /**
          * 输出查询结果中的 NV 对象名
          * @see TPMU_NAME / TPM2B_NAME
          * @see TPMT_HA
          */
-        const TPM2B_NAME& resultNVName();
+        const TPM2B_NAME& outNVName();
         /** 擦除所有临时缓存的输出数据, 前两个成员函数的返回值也会被清零 */
         void eraseCachedOutputData();
     };

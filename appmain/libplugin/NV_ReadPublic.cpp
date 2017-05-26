@@ -84,14 +84,14 @@ void NV::ReadPublic::unpackRspPacket(TSS2_SYS_CONTEXT *ctx) {
 // ============================================================================
 // 输出读取结果的第一部分 NV Public Area
 // ============================================================================
-const TPMS_NV_PUBLIC& NV::ReadPublic::resultNVPublicArea() {
+const TPMS_NV_PUBLIC& NV::ReadPublic::outNVPublicArea() {
     return m_out->nvPublic.t.nvPublic;
 }
 
 // ============================================================================
 // 输出读取结果的第二部分 NV Name
 // ============================================================================
-const TPM2B_NAME& NV::ReadPublic::resultNVName() {
+const TPM2B_NAME& NV::ReadPublic::outNVName() {
     return m_out->nvName;
 }
 
