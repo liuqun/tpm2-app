@@ -352,6 +352,12 @@ public:
      */
     const TPMT_PUBLIC& outPublicArea();
     /**
+     * 输出查询结果中的 NV 公开信息区域
+     * @see TPMT_PUBLIC / TPM2B_PUBLIC
+     * @see ValueFromTPM2B() 拆解 TPM2B_* 数据块
+     */
+    const TPM2B_PUBLIC& outPublic();
+    /**
      * 输出查询结果对象名
      * @see TPMU_NAME / TPM2B_NAME
      * @see TPMT_HA
@@ -480,6 +486,11 @@ namespace NV
         virtual void unpackRspPacket(TSS2_SYS_CONTEXT *ctx);
         /** 输出读取 NV 的最终结果 */
         const TPM2B& result();
+        /**
+         * 按 TPM2B_MAX_NV_BUFFER 格式直接输出 NV 读取结果
+         * @see MAX_NV_BUFFER_SIZE / TPM2B_MAX_NV_BUFFER
+         */
+        const TPM2B_MAX_NV_BUFFER& outData();
         /** 指定要读的 NV Index 以及起始偏移量和数据字节数 */
         void configNVIndex(
                 TPMI_RH_NV_INDEX index, ///< Index
