@@ -177,9 +177,9 @@ class ReadPublic: public TPMCommand
 /// cmd.buildCmdPacket(sysContext);
 /// Tss2_Sys_Execute(sysContext);
 /// cmd.unpackRspPacket(sysContext);
-/// const TPMS_PUBLIC& pub = cmd.resultPublicArea();
-/// const TPM2B_NAME& name = cmd.resultName();
-/// const TPM2B_NAME& qn = cmd.resultQualifiedName();
+/// const TPMT_PUBLIC& pub = cmd.outPublicArea();
+/// const TPM2B_NAME& name = cmd.outName();
+/// const TPM2B_NAME& qn = cmd.outQualifiedName();
 /// // 注意请把输出变量定义为 const 型的 C++ 变量引用, 否则编译器会警告不允许类型转换时丢弃 const
 /// ```
 {
@@ -194,19 +194,19 @@ public:
      * 输出查询结果中的 NV 公开信息区域
      * @see TPMT_PUBLIC / TPM2B_PUBLIC
      */
-    const TPMT_PUBLIC& resultPublicArea();
+    const TPMT_PUBLIC& outPublicArea();
     /**
      * 输出查询结果对象名
      * @see TPMU_NAME / TPM2B_NAME
      * @see TPMT_HA
      */
-    const TPM2B_NAME& resultName();
+    const TPM2B_NAME& outName();
     /**
      * 输出查询结果对象QN名
      * @see TPMU_NAME / TPM2B_NAME
      * @see TPMT_HA
      */
-    const TPM2B_NAME& resultQualifiedName();
+    const TPM2B_NAME& outQualifiedName();
     /** 擦除所有临时缓存的输出数据, 前两个成员函数的返回值也会被清零 */
     void eraseCachedOutputData();
 };

@@ -87,21 +87,21 @@ void ReadPublic::unpackRspPacket(TSS2_SYS_CONTEXT *ctx) {
 // ============================================================================
 // 输出读取结果的第一部分 Public Area
 // ============================================================================
-const TPMT_PUBLIC& ReadPublic::resultPublicArea() {
+const TPMT_PUBLIC& ReadPublic::outPublicArea() {
     return m_out->outPublic.t.publicArea;
 }
 
 // ============================================================================
 // 输出读取结果的第二部分 Name
 // ============================================================================
-const TPM2B_NAME& ReadPublic::resultName() {
+const TPM2B_NAME& ReadPublic::outName() {
     return m_out->name;
 }
 
 // ============================================================================
 // 输出读取结果的第三部分 QN(Qualified Name)
 // ============================================================================
-const TPM2B_NAME& ReadPublic::resultQualifiedName() {
+const TPM2B_NAME& ReadPublic::outQualifiedName() {
     return m_out->qualifiedName;
 }
 
