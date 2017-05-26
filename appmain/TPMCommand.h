@@ -121,9 +121,8 @@ class Load: public TPMCommand
 /// cmd.buildCmdPacket(sysContext);
 /// Tss2_Sys_Execute(sysContext);
 /// cmd.unpackRspPacket(sysContext);
-/// TPMS_PUBLIC& pub = cmd.resultPublicArea();
-/// TPM2B_NAME& name = cmd.resultName();
-/// TPM2B_NAME& qn = cmd.resultQualifiedName();
+/// TPMI_OBJECT handle = cmd.outObjectHandle();
+/// TPM2B_NAME& name = cmd.outName();
 /// ```
 {
 public:
@@ -153,13 +152,13 @@ public:
             const TPM2B_PUBLIC& inPublic ///< 引用已有的公开数据
             );
     /** 返回新密钥节点的句柄 */
-    TPM_HANDLE resultObjectHandle();
+    TPM_HANDLE outObjectHandle();
     /**
      * 输出新创建的密钥名
      * @see TPMU_NAME / TPM2B_NAME
      * @see TPMT_HA
      */
-    const TPM2B_NAME& resultName();
+    const TPM2B_NAME& outName();
     /**
      * 擦除临时缓存的输出数据, 会同时清零其他成员函数返回的只读数据块的值, 均为非敏感数据
      */

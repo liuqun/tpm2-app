@@ -149,14 +149,14 @@ void Load::unpackRspPacket(TSS2_SYS_CONTEXT *ctx) {
 // ============================================================================
 // 命令输出结果的第一部分: 取回新节点的 Object Handle
 // ============================================================================
-TPM_HANDLE Load::resultObjectHandle() {
+TPM_HANDLE Load::outObjectHandle() {
     return m_out->objectHandle;
 }
 
 // ============================================================================
 // 命令输出结果的第二部分: 新节点的节点名
 // ============================================================================
-const TPM2B_NAME& Load::resultName() {
+const TPM2B_NAME& Load::outName() {
     return m_out->name;
 }
 
