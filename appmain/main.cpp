@@ -63,7 +63,6 @@ public:
     void disconnect();
 };
 
-#include <exception>
 int main(int argc, char *argv[])
 {
     MyAppFramework framework;
@@ -106,43 +105,7 @@ int main(int argc, char *argv[])
 
     // 测试开始, 首先建立与 TSS resource manager 连接
     framework.connectToResourceManager(hostname, port);
-    // ----------------------------------
-    printf("%s\n", "测试 Startup 命令");
-    TPMCommands::Startup startup;
-    try
-    {
-        startup.disableRestoreSavedState();
-        framework.sendCommand(startup);
-        framework.fetchResponse(startup);
-    }
-    catch(std::exception& e)
-    {
-        fprintf(stderr, "Error: %s\n", e.what());
-    }
-    // ----------------------------------
-    printf("%s\n", "测试 NV DefineSpace 命令");
-    TPMCommands::NV::DefineSpace nvdef;
-    TPMI_RH_NV_INDEX idx = NV_INDEX_FIRST + 0x000020;
-    UINT16 size = 16;
-    nvdef.configNVIndex(idx);
-    nvdef.configNVIndexDataSize(size);
-    nvdef.configNVIndexAuthPassword("My password", 11);
-    nvdef.configCreatorAsOwner();
-    framework.sendCommand(nvdef);
-    framework.fetchResponse(nvdef);
-    // ----------------------------------
-    printf("%s\n", "测试 Shutdown 命令");
-    TPMCommands::Shutdown shutdown;
-    try
-    {
-        shutdown.enbleRestoreSavedState();
-        framework.sendCommand(shutdown);
-        framework.fetchResponse(shutdown);
-    }
-    catch (std::exception& e)
-    {
-        fprintf(stderr, "Error: %s\n", e.what());
-    }
+
     // 测试结束需要手动切断与 TSS resource manager 之间的连接
     framework.disconnect();
     return (0);
