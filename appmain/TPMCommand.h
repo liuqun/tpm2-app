@@ -94,14 +94,50 @@ public:
     virtual ~Shutdown();
 };
 
-/// 读取密钥(或自定义Object)非敏感数据
+/// 读取密钥的公开数据
 class ReadPublic: public TPMCommand
+/// @details
+/// 已知密钥句柄, 读取密钥的公开数据. 其中包括非对称密钥的公钥部分和 TPM 密钥树中相应的节点名等
+/// ```
+/// // 用法示意(伪代码):
+/// TPMCommands::ReadPublic cmd;
+///
+/// cmd.configObject(handle);
+/// cmd.buildCmdPacket(sysContext);
+/// Tss2_Sys_Execute(sysContext);
+/// cmd.unpackRspPacket(sysContext);
+/// const TPMS_PUBLIC& pub = cmd.resultPublicArea();
+/// const TPM2B_NAME& name = cmd.resultName();
+/// const TPM2B_NAME& qn = cmd.resultQualifiedName();
+/// // 注意请把输出变量定义为 const 型的 C++ 变量引用, 否则编译器会警告不允许类型转换时丢弃 const
+/// ```
 {
 public:
     ReadPublic();
     virtual void buildCmdPacket(TSS2_SYS_CONTEXT *ctx);
     virtual void unpackRspPacket(TSS2_SYS_CONTEXT *ctx);
     virtual ~ReadPublic();
+    /** 指定要查询的对象 */
+    void configObject(TPMI_DH_OBJECT objectHandle);
+    /**
+     * 输出查询结果中的 NV 公开信息区域
+     * @see TPMT_PUBLIC / TPM2B_PUBLIC
+     */
+    const TPMT_PUBLIC& resultPublicArea();
+    /**
+     * 输出查询结果对象名
+     * @see TPMU_NAME / TPM2B_NAME
+     * @see TPMT_HA
+     */
+    const TPM2B_NAME& resultName();
+    /**
+     * 输出查询结果对象QN名
+     * @see TPMU_NAME / TPM2B_NAME
+     * @see TPMT_HA
+     */
+    const TPM2B_NAME& resultQualifiedName();
+    /** 擦除所有临时缓存的输出数据, 前两个成员函数的返回值也会被清零 */
+    void eraseCachedOutputData();
 };
 
 namespace NV
