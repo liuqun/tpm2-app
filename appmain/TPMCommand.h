@@ -105,6 +105,150 @@ public:
     virtual ~Shutdown();
 };
 
+/// TPM 密钥创建命令
+class Create: public TPMCommand
+/// @details
+/// 创建一个普通密钥, 必须设置详细参数指定该密钥的类型
+{
+public:
+    Create();
+    virtual void buildCmdPacket(TSS2_SYS_CONTEXT *ctx);
+    virtual void unpackRspPacket(TSS2_SYS_CONTEXT *ctx);
+    virtual ~Create();
+    /** 指定通过密钥树中哪个父节点进行授权校验 */
+    void configAuthParent(TPMI_DH_OBJECT parentHandle);
+    /**
+     * 指定新密钥的访问授权密码和额外的敏感数据
+     *
+     * @param keyAuthValue 为即将创建的新密钥节点指定一个授权密码
+     * @param size 授权值字节数, 可以等于 0
+     * @param extraSensitiveData 当 extraDataSize == 0 时, 该指针将被忽略
+     * @param extraDataSize 可以等于 0
+     *
+     * @see eraseKeySensitiveData()
+     */
+    void configKeySensitiveData(
+            /** 指定子节点的授权值 */
+            const void *keyAuthValue,
+            UINT16 size,
+            /** 附加一些额外的初始值用于创建密钥 */
+            const void *extraSensitiveData,
+            UINT16 extraDataSize // 附加敏感数据的长度, 取值范围>=0
+            );
+    /**
+     * 清除密钥敏感数据
+     *
+     * 成员函数configKeySensitiveData()中指定的节点授权访问密+额外的敏感数据
+     * @see configKeySensitiveData()
+     */
+    void eraseKeySensitiveData();
+    /**
+     * 指定生成密钥树节点名称时采用哈希算法
+     *
+     * 注意请区别密钥节点名称哈希算法和 HMAC 之中的哈希算法, 两者是无关的
+     *
+     * @param nameAlg 哈希算法, 备选值包括:
+     * - 0x0004 TPM_ALG_SHA1
+     * - 0x000B TPM_ALG_SHA256
+     * - 0x000C TPM_ALG_SHA384
+     * - 0x000D TPM_ALG_SHA512
+     * - 0x0012 TPM_ALG_SM3_256
+     * - 0x0010 TPM_ALG_NULL (表示不进行哈希)
+     */
+    void configKeyNameAlg(TPMI_ALG_HASH nameAlg=TPM_ALG_NULL);
+    /** 指定密钥的公开数据 */
+    void configPublicData(
+            const TPM2B_PUBLIC& inPublic ///< 引用公开数据数据结构体
+            );
+    /**
+     * 输出密钥的私钥相关数据
+     * @see _PRIVATE / TPM2B_PRIVATE
+     * @see TPMU_SENSITIVE_COMPOSITE 是 TPM 存储私钥的数据格式
+     * @see TPMT_SENSITIVE / TPM2B_SENSITIVE
+     */
+    TPM2B_PRIVATE& outPrivate();
+    /**
+     * 输出密钥的公开数据
+     * @see TPMT_PUBLIC / TPM2B_PUBLIC
+     */
+    TPM2B_PUBLIC& outPublic();
+    /**
+     * 输出用于证明该密钥是由 TPM 模块创建的 ticket 结构体
+     * @see TPMT_TK_CREATION
+     */
+    TPMT_TK_CREATION& outCreationTicket();
+    /**
+     * 输出 TPM 模块创建密钥数据和当时的环境状态记录
+     * @see TPM2B_CREATION_DATA
+     */
+    TPM2B_CREATION_DATA& outCreationData();
+    /**
+     * 输出 TPM2B_CREATION_DATA 结构体的哈希值
+     */
+    TPM2B_DIGEST& outCreationHash();
+};
+
+/// HMAC 密钥创建命令
+class HMACKeyCreate: public Create
+/// @details
+/// 创建一个用于 HMAC 校验的 keyed hash 密钥
+/// ```
+/// // 用法示意(伪代码):
+/// TPMCommands::HMACKeyCreate create;
+///
+/// create.configAuthParent(parent);
+/// create.configAuthSession(TPM_RS_PW);
+/// create.configAuthPassword(parentPassword, strlen(parentPassword));
+/// create.configKeyNameAlg(TPM_ALG_SHA1);
+/// create.configKeySensitiveData(nodePassword, strlen(nodePassword), "", strlen(""));
+/// create.configKeyParameters(TPM_ALG_SHA1);
+/// create.buildCmdPacket(sysContext);
+/// Tss2_Sys_Execute(sysContext);
+/// create.unpackRspPacket(sysContext);
+/// TPM2B_PRIVATE& priv = create.outPrivate();
+/// TPM2B_PUBLIC& pub = create.outPublic();
+/// ```
+/// @see TPMCommands::Load 下一步调用 Load 命令时会用到 outPrivate() 和 outPublic() 输出的数据
+{
+public:
+    HMACKeyCreate();
+    /**
+     * 配置该密钥为一个 HMAC KeyedHash 密钥, 指定密钥本身要使用的哈希算法
+     *
+     * @param hashAlg 备选值包括:
+     * - 0x0004 TPM_ALG_SHA1
+     * - 0x000B TPM_ALG_SHA256
+     * - 0x000C TPM_ALG_SHA384
+     * - 0x000D TPM_ALG_SHA512
+     * - 0x0012 TPM_ALG_SM3_256
+     * - 0x0010 TPM_ALG_NULL (表示不进行哈希)
+     */
+    void configHMACKeyParameters(TPMI_ALG_HASH hashAlg);
+};
+
+/// XOR 密钥创建命令
+class XORKeyCreate: public Create
+/// @details 创建一个用于进行 XOR 计算的 keyed hash 密钥
+{
+public:
+    XORKeyCreate();
+    /**
+     * 配置该密钥为一个 XOR KeyedHash 密钥, 指定密钥本身要使用的哈希算法和 KDF 密钥派生算法
+     *
+     * @param hashAlg 备选值包括:
+     * - 0x0004 TPM_ALG_SHA1
+     * - 0x000B TPM_ALG_SHA256
+     * - 0x000C TPM_ALG_SHA384
+     * - 0x000D TPM_ALG_SHA512
+     * - 0x0012 TPM_ALG_SM3_256
+     * - 0x0010 TPM_ALG_NULL (表示不进行哈希)
+     * @param kdf 密钥衍生算法,  备选值包括:
+     * - 0x0022 TPM_ALG_KDF1_SP800_108
+     * - 0x0020 TPM_ALG_KDF1_SP800_56A
+     */
+    void configXORKeyParameters(TPMI_ALG_HASH hashAlg, TPMI_ALG_KDF kdf=TPM_ALG_KDF1_SP800_108);
+};
+
 /// 加载命令
 class Load: public TPMCommand
 /// @details
