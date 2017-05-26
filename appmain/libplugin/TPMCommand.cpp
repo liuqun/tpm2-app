@@ -63,4 +63,40 @@ void TPMCommand::unpackRspPacket(TSS2_SYS_CONTEXT *ctx) {
 }
 
 TPMCommand::~TPMCommand() {
+    eraseCachedAuthPassword();
+}
+
+// ============================================================================
+// 指定访问授权方式(通过哪种会话进行授权校验)
+// ============================================================================
+void TPMCommand::configAuthSession(
+        TPMI_SH_AUTH_SESSION authSessionHandle ///< 会话句柄, 可选取值包括: 明文密码授权会话句柄 TPM_RS_PW 或其他 HMAC/Policy 会话句柄
+        ) {
+    m_sendAuthValues[0].sessionHandle = authSessionHandle;
+}
+
+// ============================================================================
+// 指定授权值访问密码(属于敏感数据)
+// ============================================================================
+void TPMCommand::configAuthPassword(const void *password, UINT16 length) {
+    TPMS_AUTH_COMMAND& cmdAuth ///< an alias for m_sendAuthValues[0]
+            =m_sendAuthValues[0];
+
+    cmdAuth.nonce.t.size = 0;
+    cmdAuth.sessionAttributes.val = 0;
+    if (length > sizeof(cmdAuth.hmac.t.buffer)) {
+        length = sizeof(cmdAuth.hmac.t.buffer); // 舍弃过长的字符, 防止溢出
+    }
+    memcpy((void *) cmdAuth.hmac.t.buffer, (void *) password, length);
+    cmdAuth.hmac.t.size = length;
+}
+
+// ============================================================================
+// 擦除临时缓存的授权值
+// ============================================================================
+void TPMCommand::eraseCachedAuthPassword() {
+    TPMS_AUTH_COMMAND& cmdAuth ///< an alias for m_sendAuthValues[0]
+            =m_sendAuthValues[0];
+    memset((void *) cmdAuth.hmac.t.buffer, 0x00, sizeof(cmdAuth.hmac.t.buffer));
+    cmdAuth.hmac.t.size = 0;
 }

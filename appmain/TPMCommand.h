@@ -64,6 +64,17 @@ public:
     virtual void buildCmdPacket(TSS2_SYS_CONTEXT *ctx);
     virtual void unpackRspPacket(TSS2_SYS_CONTEXT *ctx);
     virtual ~TPMCommand();
+    /** 指定授权方式(通过哪种会话进行授权校验) */
+    virtual void configAuthSession(
+            TPMI_SH_AUTH_SESSION authSessionHandle=TPM_RS_PW ///< 会话句柄, 可选取值包括: 明文密码授权会话句柄 TPM_RS_PW, 其他 HMAC/Policy 会话句柄
+            );
+    /** 指定指定授权访问密码或授权值(一般是指 TPM 密钥树父节点的访问密码) */
+    virtual void configAuthPassword(
+            const void *password, ///< 句柄授权数据
+            UINT16 length ///< 授权数据长度(单位: 字节)
+            );
+    /** 擦除临时缓存的密码 */
+    virtual void eraseCachedAuthPassword();
 };
 
 /// @namespace TPMCommands
