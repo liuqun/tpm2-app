@@ -126,7 +126,7 @@ void Load::buildCmdPacket(TSS2_SYS_CONTEXT *ctx) {
             m_in->inPrivate,
             m_in->inPublic
             );
-    // 然后显式调用父类的成员函数(注: Load 命令本身无需授权, 预留此接口仅用于HMAC校验或参数加解密)
+    // 然后显式调用父类的成员函数完成填写 AuthValue 工作
     this->TPMCommand::buildCmdPacket(ctx);
 }
 
