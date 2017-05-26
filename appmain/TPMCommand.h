@@ -105,6 +105,104 @@ public:
     virtual ~Shutdown();
 };
 
+/// 调用TPM 密钥创建命令 Tss2_Sys_CreatePrimary() 创建一个新的密钥树主节点
+class CreatePrimary: public TPMCommand
+{
+public:
+    CreatePrimary();
+    virtual void buildCmdPacket(TSS2_SYS_CONTEXT *ctx);
+    virtual void unpackRspPacket(TSS2_SYS_CONTEXT *ctx);
+    ~CreatePrimary();
+    /**
+     * 指定新的密钥树的放置位置
+     *
+     * 该函数指定新创建的密钥树主节点应位于哪个位置, 为了能够访问相应的位置句柄,
+     * 调用该函数之后应再调用 TPMCommand::configAuthSession() TPMCommand::configAuthPassword() 等函数填写具体授权信息
+     *
+     * @param hierarchy 可选值包括:
+     * - 0x40000007: TPM_RH_NULL
+     * - 0x40000001: TPM_RH_OWNER
+     * - 0x4000000C: TPM_RH_PLATFORM
+     * - 0x4000000B: TPM_RH_ENDORSEMENT
+     */
+    void configAuthHierarchy(TPMI_RH_HIERARCHY hierarchy=TPM_RH_NULL);
+    /**
+     * 指定新密钥的访问授权密码和额外的敏感数据
+     *
+     * @param keyAuthValue 为即将创建的新密钥节点指定一个授权密码
+     * @param size 授权值字节数, 可以等于 0
+     * @param extraSensitiveData 当 extraDataSize == 0 时, 该指针将被忽略
+     * @param extraDataSize 可以等于 0
+     *
+     * @see eraseKeySensitiveData()
+     */
+    void configKeySensitiveData(
+            /** 指定子节点的授权值 */
+            const void *keyAuthValue,
+            UINT16 size,
+            /** 附加一些额外的初始值用于创建密钥 */
+            const void *extraSensitiveData,
+            UINT16 extraDataSize // 附加敏感数据的长度, 取值范围>=0
+            );
+    /**
+     * 清除密钥敏感数据
+     *
+     * 成员函数configKeySensitiveData()中指定的节点授权访问密+额外的敏感数据
+     * @see configKeySensitiveData()
+     */
+    void eraseKeySensitiveData();
+    /**
+     * 指定生成密钥树节点名称时采用哈希算法
+     *
+     * 注意请区别密钥节点名称哈希算法和 HMAC 之中的哈希算法, 两者是无关的
+     *
+     * @param nameAlg 哈希算法, 备选值包括:
+     * - 0x0004 TPM_ALG_SHA1
+     * - 0x000B TPM_ALG_SHA256
+     * - 0x000C TPM_ALG_SHA384
+     * - 0x000D TPM_ALG_SHA512
+     * - 0x0012 TPM_ALG_SM3_256
+     * - 0x0010 TPM_ALG_NULL (表示不进行哈希)
+     */
+    void configKeyNameAlg(TPMI_ALG_HASH nameAlg=TPM_ALG_NULL);
+    /** 指定密钥的公开数据 */
+    void configPublicData(
+            const TPM2B_PUBLIC& inPublic ///< 引用公开数据, 按 TPM2B_PUBLIC 数据结构输入
+            );
+    /** 指定密钥的公开数据 */
+    void configPublicData(
+            const TPMT_PUBLIC& publicArea ///< 引用公开数据, 按 TPMT_PUBLIC 数据结构输入
+            );
+    /** 输出密钥的句柄 */
+    TPM_HANDLE& outObjectHandle();
+    /**
+     * 输出密钥的私钥相关数据
+     * @see _PRIVATE / TPM2B_PRIVATE
+     * @see TPMU_SENSITIVE_COMPOSITE 是 TPM 存储私钥的数据格式
+     * @see TPMT_SENSITIVE / TPM2B_SENSITIVE
+     */
+    TPM2B_PRIVATE& outPrivate();
+    /**
+     * 输出密钥的公开数据
+     * @see TPMT_PUBLIC / TPM2B_PUBLIC
+     */
+    TPM2B_PUBLIC& outPublic();
+    /**
+     * 输出用于证明该密钥是由 TPM 模块创建的 ticket 结构体
+     * @see TPMT_TK_CREATION
+     */
+    TPMT_TK_CREATION& outCreationTicket();
+    /**
+     * 输出 TPM 模块创建密钥数据和当时的环境状态记录
+     * @see TPM2B_CREATION_DATA
+     */
+    TPM2B_CREATION_DATA& outCreationData();
+    /** 输出 TPM2B_CREATION_DATA 结构体的哈希值      */
+    TPM2B_DIGEST& outCreationHash();
+    /** 输出新节点的节点名 */
+    const TPM2B_NAME& outName();
+};
+
 /// TPM 密钥创建命令
 class Create: public TPMCommand
 /// @details
