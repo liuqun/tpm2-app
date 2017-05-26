@@ -150,6 +150,82 @@ int main(int argc, char *argv[])
     {
         fprintf(stderr, "Unknown Error\n");
     }
+
+    // ------------------------------------------------------------------------
+    printf("\n");
+    printf("测试 Create 命令(以 HMACKeyCreate 为例)\n");
+    TPMCommands::HMACKeyCreate create;
+    const char *ChildPassword = "child password";
+    const UINT16 ChildPasswordLen = strlen("child password");
+    printf("We will create a child key node under parent(0x%08X).\n",
+            createprimary.outObjectHandle());
+    create.configAuthParent(createprimary.outObjectHandle());
+    create.configAuthSession(TPM_RS_PW);
+    create.configAuthPassword(primaryPassword, primaryPasswordLen);
+    create.configKeySensitiveData(ChildPassword, ChildPasswordLen, "", 0);
+    create.configKeyNameAlg(TPM_ALG_SHA1);
+    create.configHMACKeyParameters(TPM_ALG_SHA1);
+    try
+    {
+        framework.sendCommand(create);
+        framework.fetchResponse(create);
+        printf("Child key node has been created successfully.\n");
+    }
+    catch (...)
+    {
+        fprintf(stderr, "Unknown Error\n");
+    }
+
+    // ------------------------------------------------------------------------
+    printf("\n");
+    printf("测试 Load 命令\n");
+    TPMCommands::Load load;
+    load.configAuthParent(createprimary.outObjectHandle());
+    load.configAuthSession(TPM_RS_PW);
+    load.configAuthPassword(primaryPassword, primaryPasswordLen);
+    load.configPrivateData(create.outPrivate());
+    load.configPublicData(create.outPublic());
+    try
+    {
+        framework.sendCommand(load);
+        framework.fetchResponse(load);
+        const TPM2B_NAME& keyName = load.outName();
+        printf("Load 命令取回的结果是: keyName.t.size=%d\n", keyName.t.size);
+        printf("keyName data: ");
+        for (size_t i=0; i<keyName.t.size; i++)
+        {
+            printf(" 0x%02X,", keyName.t.name[i]);
+        }
+        printf("\n");
+        printf("Child key node has been loaded successfully. Child handle=0x%08X\n", load.outObjectHandle());
+    }
+    catch (...)
+    {
+        fprintf(stderr, "Unknown Error\n");
+    }
+    // ------------------------------------
+    printf("\n");
+    printf("测试 ReadPublic 命令\n");
+    TPMCommands::ReadPublic readpub;
+    readpub.configObject(load.outObjectHandle());
+    try
+    {
+        framework.sendCommand(readpub);
+        framework.fetchResponse(readpub);
+        const TPM2B_NAME& keyName = readpub.outName();
+        printf("ReadPublic 命令取回的结果是: keyName.t.size=%d\n", keyName.t.size);
+        printf("keyName data: ");
+        for (size_t i=0; i<keyName.t.size; i++)
+        {
+            printf(" 0x%02X,", keyName.t.name[i]);
+        }
+        printf("\n");
+    }
+    catch (...)
+    {
+        fprintf(stderr, "Unknown Error\n");
+    }
+
     // 测试结束需要手动切断与 TSS resource manager 之间的连接
     framework.disconnect();
     return (0);
