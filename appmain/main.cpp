@@ -63,6 +63,8 @@ public:
     void disconnect();
 };
 
+static void WriteMyRSAKeyParameters(TPMT_PUBLIC& publicArea, TPMI_RSA_KEY_BITS keyBits=2048);
+
 int main(int argc, char *argv[])
 {
     MyAppFramework framework;
@@ -106,9 +108,78 @@ int main(int argc, char *argv[])
     // 测试开始, 首先建立与 TSS resource manager 连接
     framework.connectToResourceManager(hostname, port);
 
+    // ---------------------------------------
+    printf("\n");
+    printf("测试 CreatePrimary 命令\n");
+    TPMCommands::CreatePrimary createprimary;
+    const char *primaryPassword = "abcd";
+    const UINT16 primaryPasswordLen = strlen(primaryPassword);
+    TPMT_PUBLIC publicArea;
+    WriteMyRSAKeyParameters(publicArea, 2048); // 使用子函数内预先的设置密钥算法类型
+    const TPMI_RH_HIERARCHY hierarchy = TPM_RH_NULL;
+    if (TPM_RH_NULL == hierarchy)
+    {
+        printf("We will create a new key in TPM NULL-hierarchy.\n");
+    }
+
+    createprimary.configAuthHierarchy(hierarchy);
+    createprimary.configAuthSession(TPM_RS_PW);
+    createprimary.configAuthPassword("", 0);
+    createprimary.configKeyNameAlg(TPM_ALG_SHA1);
+    createprimary.configKeySensitiveData(primaryPassword, primaryPasswordLen, "", 0); // 设置密钥节点密码和附加敏感数据
+    createprimary.configPublicData(publicArea);
+    try
+    {
+        framework.sendCommand(createprimary);
+        framework.fetchResponse(createprimary);
+
+        // 分析 CreatePrimary 命令创建的句柄
+        printf("New primary key created successfully! Handle=0x%8.8x\n", createprimary.outObjectHandle());
+
+        // 分析 CreatePrimary 命令创建的密钥节点名
+        const TPM2B_NAME& keyName = createprimary.outName();
+        printf("keyName.t.size=%d\n", keyName.t.size);
+        printf("keyName data: ");
+        for (size_t i=0; i<keyName.t.size; i++)
+        {
+            printf("0x%02X,", keyName.t.name[i]);
+        }
+        printf("\n");
+    }
+    catch (...)
+    {
+        fprintf(stderr, "Unknown Error\n");
+    }
     // 测试结束需要手动切断与 TSS resource manager 之间的连接
     framework.disconnect();
     return (0);
+}
+
+static void WriteMyRSAKeyParameters(TPMT_PUBLIC& publicArea, TPMI_RSA_KEY_BITS keyBits)
+{
+    publicArea.type = TPM_ALG_RSA;
+    publicArea.nameAlg = TPM_ALG_SHA1;
+    publicArea.objectAttributes.val = 0;
+    publicArea.objectAttributes.fixedTPM = 1;
+    publicArea.objectAttributes.fixedParent = 1;
+    publicArea.objectAttributes.restricted = 1;
+    publicArea.objectAttributes.userWithAuth = 1;
+    publicArea.objectAttributes.sensitiveDataOrigin = 1;
+    publicArea.objectAttributes.decrypt = 1;
+    publicArea.objectAttributes.sign = 0;
+    publicArea.authPolicy.t.size = 0;
+    publicArea.parameters.rsaDetail.symmetric.algorithm = TPM_ALG_AES;
+    publicArea.parameters.rsaDetail.symmetric.keyBits.aes = 128;
+    publicArea.parameters.rsaDetail.symmetric.mode.aes = TPM_ALG_ECB;
+    publicArea.parameters.rsaDetail.scheme.scheme = TPM_ALG_NULL;
+    publicArea.parameters.rsaDetail.keyBits = keyBits;
+    publicArea.parameters.rsaDetail.exponent = 0;
+    publicArea.unique.rsa.t.size = 0;
+    if (TPM_ALG_RSA == publicArea.type)
+    {
+        printf("Key type: RSA.\n");
+        printf("Key size: %d bits.\n", publicArea.parameters.rsaDetail.keyBits);
+    }
 }
 
 #include <cassert>
@@ -206,6 +277,7 @@ void MyAppFramework::fetchResponse(TPMCommand& cmd, int32_t timeout)
     TSS2_RC err = Tss2_Sys_ExecuteFinish(m_sysContext, timeout);
     if (err)
     {
+        fprintf(stderr, "Tss2_Sys_ExecuteFinish() returns err = 0x%X\n", err);
         // TODO: throw/raise an expection to the up level
     }
     cmd.unpackRspPacket(m_sysContext); // 调用相应的 TSS 软件栈 Tss2_Sys_XXXX_Complete() 函数
