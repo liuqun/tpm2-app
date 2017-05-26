@@ -94,6 +94,67 @@ public:
     virtual ~Shutdown();
 };
 
+/// 加载命令
+class Load: public TPMCommand
+/// @details
+/// 加载一个密钥或一个自定义 Object 对象到 TPM 的密钥节点插槽
+/// ```
+/// // 用法示意(伪代码):
+/// TPMCommands::Load cmd;
+///
+/// cmd.configAuthParent(parent);
+/// cmd.configAuthSession();
+/// cmd.configAuthPassword();
+/// cmd.configPrivateData();
+/// cmd.configPublicData();
+/// cmd.buildCmdPacket(sysContext);
+/// Tss2_Sys_Execute(sysContext);
+/// cmd.unpackRspPacket(sysContext);
+/// TPMS_PUBLIC& pub = cmd.resultPublicArea();
+/// TPM2B_NAME& name = cmd.resultName();
+/// TPM2B_NAME& qn = cmd.resultQualifiedName();
+/// ```
+{
+public:
+    Load();
+    virtual void buildCmdPacket(TSS2_SYS_CONTEXT *ctx);
+    virtual void unpackRspPacket(TSS2_SYS_CONTEXT *ctx);
+    virtual ~Load();
+    /** 指定通过密钥树中哪个父节点进行授权校验 */
+    void configAuthParent(TPMI_DH_OBJECT parentHandle);
+    /** 指定授权方式(通过哪种会话进行授权校验) */
+    void configAuthSession(
+            TPMI_SH_AUTH_SESSION authSessionHandle=TPM_RS_PW ///< 会话句柄, 可选取值包括: 明文密码授权会话句柄 TPM_RS_PW, 其他 HMAC/Policy 会话句柄
+            );
+    /** 指定指定授权访问密码或授权值(一般是指 TPM 密钥树父节点的访问密码) */
+    void configAuthPassword(
+            const void *password, ///< 句柄授权数据
+            UINT16 length ///< 授权数据长度
+            );
+    /** 擦除临时缓存的密码 */
+    void eraseCachedAuthPassword();
+    /** 指定要加载的密钥的私钥数据 */
+    void configPrivateData(
+            const TPM2B_PRIVATE& inPrivate ///< 引用已有的私钥数据结构
+            );
+    /** 指定要加载的密钥的公开数据 */
+    void configPublicData(
+            const TPM2B_PUBLIC& inPublic ///< 引用已有的公开数据
+            );
+    /** 返回新密钥节点的句柄 */
+    TPM_HANDLE resultObjectHandle();
+    /**
+     * 输出新创建的密钥名
+     * @see TPMU_NAME / TPM2B_NAME
+     * @see TPMT_HA
+     */
+    const TPM2B_NAME& resultName();
+    /**
+     * 擦除临时缓存的输出数据, 会同时清零其他成员函数返回的只读数据块的值, 均为非敏感数据
+     */
+    void eraseCachedOutputData();
+};
+
 /// 读取密钥的公开数据
 class ReadPublic: public TPMCommand
 /// @details
