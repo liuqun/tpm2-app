@@ -254,19 +254,31 @@ class Load: public TPMCommand
 /// @details
 /// 加载一个密钥或一个自定义 Object 对象到 TPM 的密钥节点插槽
 /// ```
-/// // 用法示意(伪代码):
-/// TPMCommands::Load cmd;
+/// // 通常 Load 命令要配合前一条的 Create 命令一起使用
+/// TPMCommands::HMACKeyCreate create;
+/// TPMCommands::Load load;
 ///
-/// cmd.configAuthParent(parent);
-/// cmd.configAuthSession();
-/// cmd.configAuthPassword();
-/// cmd.configPrivateData();
-/// cmd.configPublicData();
-/// cmd.buildCmdPacket(sysContext);
+/// create.configAuthParent(parent);
+/// create.configAuthSession(TPM_RS_PW);
+/// create.configAuthPassword(parentPassword, strlen(parentPassword));
+/// create.configKeyNameAlg(TPM_ALG_SHA1);
+/// create.configKeySensitiveData(nodePassword, strlen(nodePassword), "", strlen(""));
+/// create.configKeyTypeAsHMACKey(TPM_ALG_SHA1);
+/// create.buildCmdPacket(sysContext);
 /// Tss2_Sys_Execute(sysContext);
-/// cmd.unpackRspPacket(sysContext);
-/// TPMI_OBJECT handle = cmd.outObjectHandle();
-/// TPM2B_NAME& name = cmd.outName();
+/// create.unpackRspPacket(sysContext);
+///
+/// // Load 命令用法示例如下(伪代码):
+/// load.configAuthParent(parent);
+/// load.configAuthSession(TPM_RS_PW);
+/// load.configAuthPassword(parentPassword, strlen(parentPassword));
+/// load.configPrivateData(create.outPrivate());
+/// load.configPublicData(create.outPublic());
+/// load.buildCmdPacket(sysContext);
+/// Tss2_Sys_Execute(sysContext);
+/// load.unpackRspPacket(sysContext);
+/// TPMI_OBJECT handle = load.outObjectHandle();
+/// TPM2B_NAME& name = load.outName();
 /// ```
 {
 public:
@@ -283,7 +295,7 @@ public:
     /** 指定指定授权访问密码或授权值(一般是指 TPM 密钥树父节点的访问密码) */
     void configAuthPassword(
             const void *password, ///< 句柄授权数据
-            UINT16 length ///< 授权数据长度
+            UINT16 length ///< 授权数据长度(单位: 字节)
             );
     /** 擦除临时缓存的密码 */
     void eraseCachedAuthPassword();
