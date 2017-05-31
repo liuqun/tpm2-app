@@ -6,8 +6,6 @@
 #include "TPMCommand.h"
 using namespace TPMCommands;
 
-using namespace TPMCommands;
-
 // ============================================================================
 // 自定义输入输出参数格式
 // ============================================================================
@@ -188,14 +186,14 @@ void CreatePrimary::configKeyNameAlg(TPMI_ALG_HASH nameAlg)
 }
 
 // ============================================================================
-// 指定要密钥的公开数据
+// 指定密钥的公开数据(按TPM2B_PUBLIC格式)
 // ============================================================================
 void CreatePrimary::configPublicData(const TPM2B_PUBLIC& inPublic) {
     m_in->inPublic = inPublic;
 }
 
 // ============================================================================
-// 指定要密钥的公开数据
+// 指定密钥的公开数据(按TPMT_PUBLIC格式)
 // ============================================================================
 void CreatePrimary::configPublicData(const TPMT_PUBLIC& publicArea) {
     m_in->inPublic.t.size = 0; // 该 size 字段可以不填, 任意值都将被底层 API 忽略

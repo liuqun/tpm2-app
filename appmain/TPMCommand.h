@@ -165,11 +165,11 @@ public:
      * - 0x0010 TPM_ALG_NULL (表示不进行哈希)
      */
     void configKeyNameAlg(TPMI_ALG_HASH nameAlg=TPM_ALG_NULL);
-    /** 指定密钥的公开数据 */
+    /** 指定密钥的公开数据(按TPM2B_PUBLIC格式指定) */
     void configPublicData(
             const TPM2B_PUBLIC& inPublic ///< 引用公开数据, 按 TPM2B_PUBLIC 数据结构输入
             );
-    /** 指定密钥的公开数据 */
+    /** 指定密钥的公开数据(按TPMT_PUBLIC格式指定) */
     void configPublicData(
             const TPMT_PUBLIC& publicArea ///< 引用公开数据, 按 TPMT_PUBLIC 数据结构输入
             );
