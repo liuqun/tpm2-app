@@ -76,7 +76,7 @@ void NV::DefineSpace::configNVIndexAuthPassword(
     memcpy((void *) m_in->auth.t.buffer, authPassword, len);
 }
 
-void NV::DefineSpace::eraseNVIndexAuthPassword() {
+void NV::DefineSpace::eraseCachedNVIndexAuthPassword() {
     memset((void *) m_in->auth.t.buffer, 0x00, sizeof(m_in->auth.t.buffer));
     m_in->auth.t.size = 0;
 }
@@ -94,6 +94,6 @@ void NV::DefineSpace::buildCmdPacket(TSS2_SYS_CONTEXT *ctx) {
 }
 
 NV::DefineSpace::~DefineSpace() {
-    eraseNVIndexAuthPassword();
+    eraseCachedNVIndexAuthPassword();
     delete m_in;
 }

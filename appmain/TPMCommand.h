@@ -496,7 +496,7 @@ namespace NV
          *
          * @details 程序退出前通过析构函数自动调用本函数, 擦除 C++ 对象运行时内存中残留的密码数据
          */
-        void eraseNVIndexAuthPassword();
+        void eraseCachedNVIndexAuthPassword();
     };
 
     /// 读取 NV 非敏感数据
