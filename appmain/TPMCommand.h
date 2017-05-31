@@ -7,44 +7,6 @@
 
 #include <sapi/tpm20.h>
 
-// ============================================================================
-// 提供一组 TPM2B_* 数据转换工具(C++ 接口)
-// ============================================================================
-
-#ifdef __cplusplus
-
-/** TPM2B_NAME--TPMU_NAME 数据类型转换函数 */
-const TPMU_NAME& ValueFromTPM2B(const TPM2B_NAME& name);
-
-/** TPM2B--BYTE 数据类型转换函数 */
-const BYTE *ValueFromTPM2B(const TPM2B& data);
-
-/** TPM2B_MAX_NV_BUFFER--BYTE 数据类型转换函数 */
-const BYTE *ValueFromTPM2B(const TPM2B_MAX_NV_BUFFER& block);
-
-#endif//__cplusplus
-
-// ============================================================================
-// 提供一组 TPM2B_* 数据转换工具(C 接口)
-// ============================================================================
-
-#ifdef __cplusplus
-extern "C" {
-#endif//__cplusplus
-
-/** TPM2B_NAME--TPMU_NAME 数据类型转换函数 */
-const TPMU_NAME *TPMU_NAME__From__TPM2B_NAME(const TPM2B_NAME *pName);
-
-/** TPM2B--BYTE 数据类型转换函数 */
-const BYTE *BYTE__From__TPM2B(const TPM2B *pData);
-
-/** TPM2B_MAX_NV_BUFFER--BYTE 数据类型转换函数 */
-const BYTE *BYTE__From__TPM2B_MAX_NV_BUFFER(const TPM2B_MAX_NV_BUFFER *pBlock);
-
-#ifdef __cplusplus
-} // End of extern "C"
-#endif//__cplusplus
-
 #ifdef __cplusplus
 
 /// @class TPMCommand
@@ -620,6 +582,44 @@ namespace NV
 
 }// end of namespace NV
 } // end of namecpace TPMCommands
+#endif//__cplusplus
+
+// ============================================================================
+// 提供一组 TPM2B_* 数据转换工具(C++ 接口)
+// ============================================================================
+
+#ifdef __cplusplus
+
+/** TPM2B_NAME--TPMU_NAME 数据类型转换函数 */
+const TPMU_NAME& ValueFromTPM2B(const TPM2B_NAME& name);
+
+/** TPM2B--BYTE 数据类型转换函数 */
+const BYTE *ValueFromTPM2B(const TPM2B& data);
+
+/** TPM2B_MAX_NV_BUFFER--BYTE 数据类型转换函数 */
+const BYTE *ValueFromTPM2B(const TPM2B_MAX_NV_BUFFER& block);
+
+#endif//__cplusplus
+
+// ============================================================================
+// 提供一组 TPM2B_* 数据转换工具(C 接口)
+// ============================================================================
+
+#ifdef __cplusplus
+extern "C" {
+#endif//__cplusplus
+
+/** TPM2B_NAME--TPMU_NAME 数据类型转换函数 */
+const TPMU_NAME *TPMU_NAME__From__TPM2B_NAME(const TPM2B_NAME *pName);
+
+/** TPM2B--BYTE 数据类型转换函数 */
+const BYTE *BYTE__From__TPM2B(const TPM2B *pData);
+
+/** TPM2B_MAX_NV_BUFFER--BYTE 数据类型转换函数 */
+const BYTE *BYTE__From__TPM2B_MAX_NV_BUFFER(const TPM2B_MAX_NV_BUFFER *pBlock);
+
+#ifdef __cplusplus
+} // End of extern "C"
 #endif//__cplusplus
 
 #endif//TPM_COMMAND_H_
