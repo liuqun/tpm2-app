@@ -82,7 +82,7 @@ CreatePrimary::CreatePrimary() {
 // ============================================================================
 CreatePrimary:: ~CreatePrimary() {
     eraseCachedAuthPassword();
-    eraseKeySensitiveData();
+    eraseCachedKeySensitiveData();
     delete m_in;
     delete m_out;
 }
@@ -173,7 +173,7 @@ void CreatePrimary::configKeySensitiveData(
 // ============================================================================
 // 清除缓存的敏感数据
 // ============================================================================
-void CreatePrimary::eraseKeySensitiveData() {
+void CreatePrimary::eraseCachedKeySensitiveData() {
     memset(&(m_in->inSensitive), 0x00, sizeof(m_in->inSensitive));
 }
 

@@ -134,7 +134,7 @@ public:
      * @param extraSensitiveData 当 extraDataSize == 0 时, 该指针将被忽略
      * @param extraDataSize 可以等于 0
      *
-     * @see eraseKeySensitiveData()
+     * @see eraseCachedKeySensitiveData()
      */
     void configKeySensitiveData(
             /** 指定子节点的授权值 */
@@ -145,12 +145,12 @@ public:
             UINT16 extraDataSize // 附加敏感数据的长度, 取值范围>=0
             );
     /**
-     * 清除密钥敏感数据
+     * 擦除已缓存的密钥敏感数据
      *
-     * 成员函数configKeySensitiveData()中指定的节点授权访问密+额外的敏感数据
+     * 擦除成员函数configKeySensitiveData()中指定的节点授权访问密+额外的敏感数据
      * @see configKeySensitiveData()
      */
-    void eraseKeySensitiveData();
+    void eraseCachedKeySensitiveData();
     /**
      * 指定生成密钥树节点名称时采用哈希算法
      *
@@ -223,7 +223,7 @@ public:
      * @param extraSensitiveData 当 extraDataSize == 0 时, 该指针将被忽略
      * @param extraDataSize 可以等于 0
      *
-     * @see eraseKeySensitiveData()
+     * @see eraseCachedKeySensitiveData()
      */
     void configKeySensitiveData(
             /** 指定子节点的授权值 */
@@ -234,12 +234,12 @@ public:
             UINT16 extraDataSize // 附加敏感数据的长度, 取值范围>=0
             );
     /**
-     * 清除密钥敏感数据
+     * 擦除已缓存的密钥敏感数据
      *
-     * 成员函数configKeySensitiveData()中指定的节点授权访问密+额外的敏感数据
+     * 擦除成员函数configKeySensitiveData()中指定的节点授权访问密+额外的敏感数据
      * @see configKeySensitiveData()
      */
-    void eraseKeySensitiveData();
+    void eraseCachedKeySensitiveData();
     /**
      * 指定生成密钥树节点名称时采用哈希算法
      *

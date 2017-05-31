@@ -104,7 +104,7 @@ XORKeyCreate::XORKeyCreate() {
 // ============================================================================
 Create:: ~Create() {
     eraseCachedAuthPassword();
-    eraseKeySensitiveData();
+    eraseCachedKeySensitiveData();
     delete m_in;
     delete m_out;
 }
@@ -194,7 +194,7 @@ void Create::configKeySensitiveData(
 // ============================================================================
 // 清除缓存的敏感数据
 // ============================================================================
-void Create::eraseKeySensitiveData() {
+void Create::eraseCachedKeySensitiveData() {
     memset(&(m_in->inSensitive), 0x00, sizeof(m_in->inSensitive));
 }
 
