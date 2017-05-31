@@ -185,7 +185,7 @@ void Create::configKeySensitiveData(
     m_in->inSensitive.t.sensitive.data.t.size = extraDataSize;
     if (extraDataSize > 0)
     {
-        memcpy(m_in->inSensitive.t.sensitive.userAuth.t.buffer, extraSensitiveData, extraDataSize);
+        memcpy(m_in->inSensitive.t.sensitive.data.t.buffer, extraSensitiveData, extraDataSize);
         m_in->inSensitive.t.size += sizeof(UINT16) + extraDataSize;
     }
     m_in->inPublic.t.publicArea.objectAttributes.userWithAuth = 1; // 再次确保创建密钥时正确的标志位已经被设置
