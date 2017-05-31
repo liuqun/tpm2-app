@@ -11,12 +11,12 @@ using namespace TPMCommands;
 // ============================================================================
 
 /// 私有结构体 NV_ReadPublic_In
-typedef struct Parameters_In {
+typedef struct In {
     TPMI_RH_NV_INDEX nvIndex;
 } NV_ReadPublic_In;
 
 /// 私有结构体 NV_ReadPublic_Out
-typedef struct Parameters_Out {
+typedef struct Out {
     TPM2B_NV_PUBLIC nvPublic;
     TPM2B_NAME nvName;
 } NV_ReadPublic_Out;

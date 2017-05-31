@@ -52,8 +52,8 @@ const BYTE *BYTE__From__TPM2B_MAX_NV_BUFFER(const TPM2B_MAX_NV_BUFFER *pBlock);
 class TPMCommand
 {
 public:
-    struct Parameters_In *m_in;
-    struct Parameters_Out *m_out;
+    struct In *m_in;
+    struct Out *m_out;
 public:
     int m_cmdAuthsCount; ///< 记录命令帧携带的 AuthValue 个数, 取值范围: [0,3]
     int m_rspAuthsCount; ///< 记录应答帧携带的 AuthValue 个数, 初始值应为 0, 执行完 unpackRspPacket() 之后会更新

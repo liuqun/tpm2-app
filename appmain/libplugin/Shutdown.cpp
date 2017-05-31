@@ -7,7 +7,7 @@
 
 using namespace TPMCommands;
 
-typedef struct Parameters_In {
+typedef struct In {
     TPM_SU shutdownType;
 } Shutdown_In;
 

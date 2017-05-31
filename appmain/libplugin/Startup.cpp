@@ -6,7 +6,7 @@
 #include "TPMCommand.h"
 using namespace TPMCommands;
 
-typedef struct Parameters_In {
+typedef struct In {
     TPM_SU startupType;
 } Startup_In;
 

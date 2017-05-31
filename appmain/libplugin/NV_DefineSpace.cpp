@@ -6,7 +6,7 @@
 #include "TPMCommand.h"
 using namespace TPMCommands;
 
-typedef struct Parameters_In {
+typedef struct In {
     TPMI_RH_PROVISION authHandle;
     TPM2B_AUTH auth; ///< 此处保存的时新定义的 NV Index 本身的访问密码, 不是父句柄的访问密码
     TPM2B_NV_PUBLIC publicInfo;

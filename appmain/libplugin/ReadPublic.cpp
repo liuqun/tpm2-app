@@ -11,12 +11,12 @@ using namespace TPMCommands;
 // ============================================================================
 
 /// 私有结构体 ReadPublic_In
-typedef struct Parameters_In {
+typedef struct In {
     TPMI_DH_OBJECT objectHandle;
 } ReadPublic_In;
 
 /// 私有结构体 ReadPublic_Out
-typedef struct Parameters_Out {
+typedef struct Out {
     TPM2B_PUBLIC outPublic;
     TPM2B_NAME name;
     TPM2B_NAME qualifiedName;

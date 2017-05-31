@@ -11,7 +11,7 @@ using namespace TPMCommands;
 // ============================================================================
 
 /// 私有结构体 Load_In
-typedef struct Parameters_In {
+typedef struct In {
     TPMI_DH_OBJECT parentHandle; ///< 输入父节点句柄. 记录父节点的句柄编号
     TPM2B_PRIVATE *inPrivate; ///< 输入指针, 指向密钥的私密信息结构体
     TPM2B_PUBLIC *inPublic; ///< 输入指针, 指向密钥的公开信息结构体
@@ -24,7 +24,7 @@ static TPM2B UNDEFINED = {
 };
 
 /// 私有结构体 Load_Out
-typedef struct Parameters_Out {
+typedef struct Out {
     TPM_HANDLE objectHandle; ///< 输出节点句柄, 密钥被成功加载之后应通过该句柄访问
     TPM2B_NAME name; ///< 输出结构体, 密钥名
 } Load_Out;

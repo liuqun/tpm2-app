@@ -11,15 +11,12 @@ using namespace TPMCommands;
 // ============================================================================
 
 /// 私有结构体 NV_Write_In
-typedef struct Parameters_In NV_Write_In;
-
-/// An overloaded struct definition:
-struct Parameters_In {
+typedef struct In {
     TPMI_RH_NV_AUTH authHandle;
     TPMI_RH_NV_INDEX nvIndex;
     TPM2B_MAX_NV_BUFFER data;
     UINT16 offset;
-};
+} NV_Write_In;
 
 // ============================================================================
 // 构造函数

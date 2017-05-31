@@ -11,23 +11,17 @@ using namespace TPMCommands;
 // ============================================================================
 
 /// 私有结构体 NV_Read_In
-typedef struct Parameters_In NV_Read_In;
-
-/// 私有结构体 NV_Read_Out
-typedef struct Parameters_Out NV_Read_Out;
-
-/// An overloaded input struct definition:
-struct Parameters_In {
+typedef struct In {
     TPMI_RH_NV_AUTH authHandle;
     TPMI_RH_NV_INDEX nvIndex;
     UINT16 size;
     UINT16 offset;
-};
+} NV_Read_In;
 
-/// An overloaded output struct definition:
-struct Parameters_Out {
+/// 私有结构体 NV_Read_Out
+typedef struct Out {
     TPM2B_MAX_NV_BUFFER data;
-};
+} NV_Read_Out;
 
 // ============================================================================
 // 构造函数

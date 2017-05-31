@@ -11,7 +11,7 @@ using namespace TPMCommands;
 // ============================================================================
 
 /// 私有结构体 Create_In
-typedef struct Parameters_In {
+typedef struct In {
     TPMI_DH_OBJECT parentHandle;
     TPM2B_SENSITIVE_CREATE inSensitive;
     TPM2B_PUBLIC inPublic;
@@ -20,7 +20,7 @@ typedef struct Parameters_In {
 } Create_In;
 
 /// 私有结构体 Create_Out
-typedef struct Parameters_Out {
+typedef struct Out {
     TPM2B_PRIVATE outPrivate;
     TPM2B_PUBLIC outPublic;
     TPM2B_CREATION_DATA creationData;
