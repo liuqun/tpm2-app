@@ -286,12 +286,12 @@ public:
     void configHMACKeyParameters(TPMI_ALG_HASH hashAlg);
 };
 
-/// XOR 密钥创建命令
-class XORKeyCreate: public Create
+/// KeyedHash XOR 密钥创建命令
+class KeyedHashXORKeyCreate: public Create
 /// @details 创建一个用于进行 XOR 计算的 keyed hash 密钥
 {
 public:
-    XORKeyCreate();
+    KeyedHashXORKeyCreate();
     /**
      * 配置该密钥为一个 XOR KeyedHash 密钥, 指定密钥本身要使用的哈希算法和 KDF 密钥派生算法
      *
@@ -306,7 +306,27 @@ public:
      * - 0x0022 TPM_ALG_KDF1_SP800_108
      * - 0x0020 TPM_ALG_KDF1_SP800_56A
      */
-    void configXORKeyParameters(TPMI_ALG_HASH hashAlg, TPMI_ALG_KDF kdf=TPM_ALG_KDF1_SP800_108);
+    void configKeyedHashXORKeyParameters(TPMI_ALG_HASH hashAlg, TPMI_ALG_KDF kdf=TPM_ALG_KDF1_SP800_108);
+};
+
+/// XOR 对称密钥创建命令
+class SymmetricXORKeyCreate: public Create
+/// @details 创建一个用于进行 XOR 计算的 keyed hash 密钥
+{
+public:
+    SymmetricXORKeyCreate();
+    /**
+     * 配置该密钥为一个 XOR 对称密钥, 指定密钥本身要使用的哈希算法和 KDF 密钥派生算法
+     *
+     * @param hashAlg 备选值包括:
+     * - 0x0004 TPM_ALG_SHA1
+     * - 0x000B TPM_ALG_SHA256
+     * - 0x000C TPM_ALG_SHA384
+     * - 0x000D TPM_ALG_SHA512
+     * - 0x0012 TPM_ALG_SM3_256
+     * @note TPM 不允许设置 hashAlg 为 0x0010 TPM_ALG_NULL
+     */
+    void configSymmetricXORKeyParameters(TPMI_ALG_HASH hashAlg);
 };
 
 /// 加载命令

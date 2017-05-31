@@ -90,13 +90,38 @@ HMACKeyCreate::HMACKeyCreate() {
 // ============================================================================
 // 构造函数
 // ============================================================================
-XORKeyCreate::XORKeyCreate() {
+KeyedHashXORKeyCreate::KeyedHashXORKeyCreate() {
     /* 详细设置输入参数的初始值: 这里我们默认将创建一个 KEYEDHASH XOR 密钥 */
     m_in->inPublic.t.publicArea.type = TPM_ALG_KEYEDHASH;
 
     m_in->inPublic.t.publicArea.parameters.keyedHashDetail.scheme.scheme = TPM_ALG_XOR;
     m_in->inPublic.t.publicArea.parameters.keyedHashDetail.scheme.details.exclusiveOr.hashAlg = TPM_ALG_NULL;
     m_in->inPublic.t.publicArea.parameters.keyedHashDetail.scheme.details.exclusiveOr.kdf = TPM_ALG_KDF1_SP800_108;
+}
+
+// ============================================================================
+// 构造函数
+// ============================================================================
+SymmetricXORKeyCreate::SymmetricXORKeyCreate() {
+    TPMT_SYM_DEF_OBJECT symmetric;
+
+    /* 设置对称密钥详细参数: symDetail */
+
+    // XOR encryption/decryption key:
+    symmetric.algorithm = TPM_ALG_XOR;
+    symmetric.keyBits.exclusiveOr = TPM_ALG_SHA1; // 可修改此处默认值. 但不能填 TPM_ALG_NULL
+    symmetric.mode.sym = 0; // XOR 对称密钥的 mode 字段也可以不填
+
+    m_in->inPublic.t.publicArea.parameters.symDetail.sym = symmetric;
+
+    /* 设置密钥类别: 对称密钥 */
+    m_in->inPublic.t.publicArea.type = TPM_ALG_SYMCIPHER;
+
+    /* 重新设置对象默认属性 */
+    m_in->inPublic.t.publicArea.objectAttributes.val = 0;
+    m_in->inPublic.t.publicArea.objectAttributes.userWithAuth = 1;
+    m_in->inPublic.t.publicArea.objectAttributes.decrypt = 1;
+    m_in->inPublic.t.publicArea.objectAttributes.sign = 1; // 对于对称密钥而言, 该标记位实际代表密钥可用于 encrypt, 并非签名
 }
 
 // ============================================================================
@@ -227,9 +252,9 @@ void HMACKeyCreate::configHMACKeyParameters(TPMI_ALG_HASH hashAlg) {
 }
 
 // ============================================================================
-// 指定 XOR Key 参数哈希算法和 kdf 算法
+// 指定 KeyedHash XOR Key 参数哈希算法和 kdf 算法
 // ============================================================================
-void XORKeyCreate::configXORKeyParameters(TPMI_ALG_HASH hashAlg, TPMI_ALG_KDF kdf) {
+void KeyedHashXORKeyCreate::configKeyedHashXORKeyParameters(TPMI_ALG_HASH hashAlg, TPMI_ALG_KDF kdf) {
     m_in->inPublic.t.publicArea.type = TPM_ALG_KEYEDHASH;
 
     m_in->inPublic.t.publicArea.parameters.keyedHashDetail.scheme.scheme = TPM_ALG_XOR;
@@ -238,6 +263,40 @@ void XORKeyCreate::configXORKeyParameters(TPMI_ALG_HASH hashAlg, TPMI_ALG_KDF kd
 
     m_in->inPublic.t.publicArea.unique.keyedHash.t.size = 0;
     m_in->inPublic.t.publicArea.unique.keyedHash.t.buffer[0] = '\0'; // 填零便于测试
+}
+
+// ============================================================================
+// XOR 对称密钥的哈希算法可选值
+// ============================================================================
+inline bool IsValidExclusiveOrHashAlg(TPMI_ALG_HASH alg) {
+    const TPMI_ALG_HASH table[] = {
+            TPM_ALG_SHA1,
+            TPM_ALG_SHA256,
+            TPM_ALG_SHA384,
+            TPM_ALG_SHA512,
+            TPM_ALG_SM3_256,
+            TPM_ALG_ERROR};
+    for (int i=0; table[i] != TPM_ALG_ERROR; i++) {
+        if (alg == table[i]) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// ============================================================================
+// 指定 XOR 对称密钥选择的哈希算法
+// ============================================================================
+void SymmetricXORKeyCreate::configSymmetricXORKeyParameters(TPMI_ALG_HASH hashAlg) {
+    m_in->inPublic.t.publicArea.type = TPM_ALG_KEYEDHASH;
+    TPMI_ALG_HASH failsafeHashAlg = TPM_ALG_SHA1; // 默认值
+    if (!IsValidExclusiveOrHashAlg(hashAlg)) {
+        hashAlg = failsafeHashAlg;
+    }
+    m_in->inPublic.t.publicArea.parameters.symDetail.sym.keyBits.exclusiveOr = hashAlg;
+
+    m_in->inPublic.t.publicArea.unique.sym.t.size = 0;
+    m_in->inPublic.t.publicArea.unique.sym.t.buffer[0] = '\0'; // 填零便于测试
 }
 
 // ============================================================================
