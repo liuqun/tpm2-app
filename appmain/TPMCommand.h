@@ -126,7 +126,7 @@ public:
      * - 0x0012 TPM_ALG_SM3_256
      * - 0x0010 TPM_ALG_NULL (表示不进行哈希)
      */
-    void configKeyNameAlg(TPMI_ALG_HASH nameAlg=TPM_ALG_NULL);
+    void configKeyNameAlg(TPMI_ALG_HASH nameAlg=TPM_ALG_SHA1);
     /** 指定密钥的公开数据(按TPM2B_PUBLIC格式指定) */
     void configPublicData(
             const TPM2B_PUBLIC& inPublic ///< 引用公开数据, 按 TPM2B_PUBLIC 数据结构输入
@@ -215,7 +215,7 @@ public:
      * - 0x0012 TPM_ALG_SM3_256
      * - 0x0010 TPM_ALG_NULL (表示不进行哈希)
      */
-    void configKeyNameAlg(TPMI_ALG_HASH nameAlg=TPM_ALG_NULL);
+    void configKeyNameAlg(TPMI_ALG_HASH nameAlg=TPM_ALG_SHA1);
     /** 指定密钥的公开数据 */
     void configPublicData(
             const TPM2B_PUBLIC& inPublic ///< 引用公开数据数据结构体
