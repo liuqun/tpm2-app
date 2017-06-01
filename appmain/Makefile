@@ -52,6 +52,7 @@ main: main.o libplugin.a
 
 .PHONY: clean
 clean:
+	$(MAKE) clean -C libplugin
 	$(RM) libplugin.a
 	$(RM) *.o
 	$(RM) cscope.files cscope.out

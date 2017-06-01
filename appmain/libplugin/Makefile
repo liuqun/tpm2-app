@@ -51,6 +51,7 @@ LIBS := $(SAPI_LIB) $(TCTI_DEVICE_LIB) $(TCTI_SOCKET_LIB) $(MARSHAL_LIB)
 # 清理规则
 .PHONY: clean
 clean:
+	$(RM) $(LIB_FILE)
 	$(RM) *.o
 	$(RM) cscope.files cscope.out
 	$(RM) TAGS
