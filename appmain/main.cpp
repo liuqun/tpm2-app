@@ -7,7 +7,131 @@ using namespace std;
 
 #include <sapi/tpm20.h>
 #include <tcti/tcti_socket.h>
+#ifndef DEFAULT_RESMGR_TPM_PORT /* @note This mircro and the legacy resourcemgr has been removed by upstream developer since 2017-05-09. @see https://github.com/01org/TPM2.0-TSS/commit/7966ef8916f79ed09eab966a58d773f413fbb67f#diff-9b5d40e51314bbf4fdfc0997a4b58838L41 */
+    #include <stdint.h>
+    const uint16_t DEFAULT_RESMGR_TPM_PORT=2323;
+#endif
 #include "TPMCommand.h"
+
+
+
+
+namespace TPMCommands
+/// @see 用法参见相应目录下的 example 示例程序
+{
+
+/// 新建授权会话命令
+class StartAuthSession: public TPMCommand
+{
+public:
+    StartAuthSession();
+    virtual void buildCmdPacket(TSS2_SYS_CONTEXT *ctx);
+    virtual void unpackRspPacket(TSS2_SYS_CONTEXT *ctx);
+    virtual ~StartAuthSession();
+    /**
+     * 输出创建的会话句柄
+     */
+    TPMI_SH_AUTH_SESSION& outSessionHandle();
+    /**
+     * 输出 TPM 返回的 Nonce 随机数
+     */
+    const TPM2B_NONCE& outNonceTpm();
+};
+}//namespace TPMCommands end
+
+using namespace TPMCommands;
+
+
+
+
+// ============================================================================
+// 自定义输入输出参数格式
+// ============================================================================
+
+/// 私有结构体
+typedef struct In {
+    TPMI_DH_OBJECT tpmKey;
+    TPMI_DH_ENTITY bind;
+    TPM2B_NONCE nonceCaller;
+    TPM2B_ENCRYPTED_SECRET encryptedSalt;
+    TPM_SE sessionType;
+    TPMT_SYM_DEF symmetric;
+    TPMI_ALG_HASH authHash;
+} StartAuthSession_In;
+
+/// 私有结构体
+typedef struct Out {
+    TPMI_SH_AUTH_SESSION sessionHandle;
+    TPM2B_NONCE nonceTPM;
+} StartAuthSession_Out;
+
+// ============================================================================
+// 构造函数
+// ============================================================================
+StartAuthSession::StartAuthSession() {
+    m_in = new StartAuthSession_In;
+    m_out = new StartAuthSession_Out;
+    m_in->tpmKey = TPM_RH_NULL;
+    m_in->bind = TPM_RH_NULL;
+    m_in->sessionType = TPM_SE_HMAC;
+    memset(m_out, 0x00, sizeof(*m_out));
+}
+
+// ============================================================================
+// 析构函数
+// ============================================================================
+StartAuthSession::~StartAuthSession() {
+    delete m_in;
+    delete m_out;
+}
+
+// ============================================================================
+// 组建命令帧报文
+// ============================================================================
+void StartAuthSession::buildCmdPacket(TSS2_SYS_CONTEXT *ctx) {
+    // 先调用底层 API 填写输入参数
+    Tss2_Sys_StartAuthSession_Prepare(// NOTE: 此处应检查函数返回值
+            ctx,
+            m_in->tpmKey,
+            m_in->bind,
+            &(m_in->nonceCaller),
+            &(m_in->encryptedSalt),
+            m_in->sessionType,
+            &(m_in->symmetric),
+            m_in->authHash
+            );
+    // 然后显式调用父类的成员函数完成填写 AuthValue 工作
+    this->TPMCommand::buildCmdPacket(ctx);
+}
+
+// ============================================================================
+// 解码应答桢报文
+// ============================================================================
+void StartAuthSession::unpackRspPacket(TSS2_SYS_CONTEXT *ctx) {
+    // 先显式调用父类的成员函数(通过该函数写入授权值)
+    this->TPMCommand::unpackRspPacket(ctx);
+    // 然后调用 API 函数进行解包
+    m_out->nonceTPM.t.size = sizeof(m_out->nonceTPM) - sizeof(UINT16); // 必填
+    Tss2_Sys_StartAuthSession_Complete(// NOTE: 此处应检查函数返回值
+            ctx,
+            &(m_out->sessionHandle),
+            &(m_out->nonceTPM)
+            );
+}
+
+// ============================================================================
+// 输出创建的会话句柄
+// ============================================================================
+TPMI_SH_AUTH_SESSION& StartAuthSession::outSessionHandle() {
+    return m_out->sessionHandle;
+}
+
+// ============================================================================
+// 输出 TPM 返回的 Nonce 随机数
+// ============================================================================
+const TPM2B_NONCE& StartAuthSession::outNonceTpm() {
+    return m_out->nonceTPM;
+}
 
 /* 排版格式: 以下函数均使用4个空格缩进，不使用Tab缩进 */
 
