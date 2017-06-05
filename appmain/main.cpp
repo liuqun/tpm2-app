@@ -7,6 +7,13 @@ using namespace std;
 
 #include <sapi/tpm20.h>
 #include <tcti/tcti_socket.h>
+#ifndef DEFAULT_RESMGR_TPM_PORT /* @note This mircro and the legacy resourcemgr has been removed by upstream developer since 2017-05-09. @see https://github.com/01org/TPM2.0-TSS/commit/7966ef8916f79ed09eab966a58d773f413fbb67f#diff-9b5d40e51314bbf4fdfc0997a4b58838L41 */
+    #warning // DEFAULT_RESMGR_TPM_PORT was removed from <tcti_socket.h>!
+    #warning // You should either use tcti_tabrmd.h or tcti-tabrmd.h (which is a replacement to the legacy resourcemgr), or directly connect to port 2321 of the simulator without a resourcemgr!
+    #warning // See https://github.com/01org/tpm2-abrmd
+    #include <stdint.h>
+    const uint16_t DEFAULT_RESMGR_TPM_PORT=DEFAULT_SIMULATOR_TPM_PORT;
+#endif
 #include "TPMCommand.h"
 
 /* 排版格式: 以下函数均使用4个空格缩进，不使用Tab缩进 */
