@@ -106,6 +106,19 @@ public:
             );
 };
 
+/// 清除指定 TPM 密钥节点, 并释放资源
+class FlushLoadedKeyNode: public TPMCommand
+{
+public:
+    FlushLoadedKeyNode();
+    virtual void buildCmdPacket(TSS2_SYS_CONTEXT *ctx);
+    virtual ~FlushLoadedKeyNode();
+    /** 指定要清除哪个密钥节点 */
+    void configKeyNodeToFlushAway(
+            TPM_HANDLE keyHandle ///< 密钥节点句柄
+            );
+};
+
 /// 调用TPM 密钥创建命令 Tss2_Sys_CreatePrimary() 创建一个新的密钥树主节点
 class CreatePrimary: public TPMCommand
 {

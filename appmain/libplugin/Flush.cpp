@@ -52,3 +52,40 @@ void FlushAuthSession::buildCmdPacket(TSS2_SYS_CONTEXT *ctx) {
     Tss2_Sys_FlushContext_Prepare( // NOTE: 此处应检查函数返回值
             ctx, m_in->flushHandle);
 }
+
+// ============================================================================
+// 构造函数
+// ============================================================================
+FlushLoadedKeyNode::FlushLoadedKeyNode() {
+    m_in = new Flush_In;
+    m_out = NULL;
+}
+
+// ============================================================================
+// 析构函数
+// ============================================================================
+FlushLoadedKeyNode::~FlushLoadedKeyNode() {
+    delete m_in;
+}
+
+// ============================================================================
+// 配置要清除的密钥节点
+// ============================================================================
+void FlushLoadedKeyNode::configKeyNodeToFlushAway(TPM_HANDLE keyHandle) {
+    // 首先应检查句柄类型, 密钥句柄keyHandle的高八位必须以0x80或0x81开始
+    const UINT8 ht ///< handle type
+            = (UINT8) (keyHandle >> HR_SHIFT);
+    if (ht < TPM_HT_TRANSIENT || ht > TPM_HT_PERSISTENT) {
+        throw "Invalid key handle!";
+    }
+    m_in->flushHandle = (TPMI_DH_CONTEXT) keyHandle;
+}
+
+// ============================================================================
+// 组建命令帧报文
+// ============================================================================
+void FlushLoadedKeyNode::buildCmdPacket(TSS2_SYS_CONTEXT *ctx) {
+    // 调用底层 API 填写输入参数
+    Tss2_Sys_FlushContext_Prepare( // NOTE: 此处应检查函数返回值
+            ctx, m_in->flushHandle);
+}
