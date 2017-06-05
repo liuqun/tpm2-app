@@ -232,6 +232,32 @@ int main(int argc, char *argv[])
     {
         fprintf(stderr, "Unknown Error\n");
     }
+    // ------------------------------------
+    printf("\n");
+    printf("测试 Flush 命令:\n");
+    TPMCommands::FlushLoadedKeyNode flush;
+    flush.configKeyNodeToFlushAway(createprimary.outObjectHandle());
+    try
+    {
+        printf("发送命令, 让 TPM 删除根节点\n");
+        framework.sendCommand(flush);
+        framework.fetchResponse(flush);
+    }
+    catch (...)
+    {
+        fprintf(stderr, "Unknown error happened in TPM command FlushLoadedKeyNode\n");
+    }
+    flush.configKeyNodeToFlushAway(load.outObjectHandle());
+    try
+    {
+        printf("发送命令, 让 TPM 删除子节点\n");
+        framework.sendCommand(flush);
+        framework.fetchResponse(flush);
+    }
+    catch (...)
+    {
+        fprintf(stderr, "Unknown error happened in TPM command FlushLoadedKeyNode\n");
+    }
 
     // 测试结束需要手动切断与 TSS resource manager 之间的连接
     framework.disconnect();
