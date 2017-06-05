@@ -67,6 +67,45 @@ public:
     virtual ~Shutdown();
 };
 
+/// 新建授权会话命令
+class StartAuthSession: public TPMCommand
+/// 授权会话类型可以是 HMAC 会话或 Policy 会话.
+/// 如果用户未指定类型, 则默认创建一个新的 HMAC 授权会话
+{
+public:
+    StartAuthSession();
+    virtual void buildCmdPacket(TSS2_SYS_CONTEXT *ctx);
+    virtual void unpackRspPacket(TSS2_SYS_CONTEXT *ctx);
+    virtual ~StartAuthSession();
+    /** 设置要创建授权会话类型: HMAC 授权会话 */
+    void configSessionTypeAsHMACSession();
+    /** 设置要创建授权会话类型: Policy 授权会话 */
+    void configSessionTypeAsPolicySession();
+    /** 设置新会话加密选项: 设置 salt 值并指定 TPM 解读该 salt 值时所需使用的密钥句柄 */
+    void configEncryptedSaltAlongWithItsDecryptKey(UINT16 saltSize, void *encryptedSaltValue, TPM_HANDLE decryptKey);
+    /** 设置新会话加密选项: 通过绑定某个 Entity 对象(密钥或 NV Index)为该会话指定的访问授权值, 即访问密码 */
+    void configBindEntity(TPM_HANDLE entityHandle);
+    /** 设置新会话的第一个 nonce 值(即 nonceCaller, 用于抵抗录音重放攻击) */
+    void configNonceCaller(UINT16 nonceSize, void *nonceValue);
+    /** 输出创建的会话句柄 */
+    TPMI_SH_AUTH_SESSION outSessionHandle();
+    /** 输出 TPM 返回的 Nonce 随机数(用于抵抗录音重放攻击) */
+    const TPM2B_NONCE& outNonceTpm();
+};
+
+/// 清除指定的 HMAC 授权会话(或 policy 授权会话), 并释放资源.
+class FlushAuthSession: public TPMCommand
+{
+public:
+    FlushAuthSession();
+    virtual void buildCmdPacket(TSS2_SYS_CONTEXT *ctx);
+    virtual ~FlushAuthSession();
+    /** 指定要清除哪个授权会话 */
+    void configSessionHandleToFlushAway(
+            TPMI_SH_AUTH_SESSION sessionHandle ///< 授权会话句柄
+            );
+};
+
 /// 调用TPM 密钥创建命令 Tss2_Sys_CreatePrimary() 创建一个新的密钥树主节点
 class CreatePrimary: public TPMCommand
 {
