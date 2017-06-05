@@ -610,6 +610,9 @@ namespace NV
 
 #ifdef __cplusplus
 
+/** TPM2B_ENCRYPTED_SECRET--TPMU_ENCRYPTED_SECRET 数据类型转换函数 */
+const TPMU_ENCRYPTED_SECRET& ValueFromTPM2B(const TPM2B_ENCRYPTED_SECRET& secret);
+
 /** TPM2B_NAME--TPMU_NAME 数据类型转换函数 */
 const TPMU_NAME& ValueFromTPM2B(const TPM2B_NAME& name);
 
@@ -628,9 +631,6 @@ const BYTE *ValueFromTPM2B(const TPM2B_MAX_NV_BUFFER& block);
 #ifdef __cplusplus
 extern "C" {
 #endif//__cplusplus
-
-/** TPM2B_ENCRYPTED_SECRET--TPMU_ENCRYPTED_SECRET 数据类型转换函数 */
-const TPMU_ENCRYPTED_SECRET& ValueFromTPM2B(const TPM2B_ENCRYPTED_SECRET& secret);
 
 /** TPM2B_ENCRYPTED_SECRET--TPMU_ENCRYPTED_SECRET 数据类型转换函数 */
 const TPMU_ENCRYPTED_SECRET *TPMU_ENCRYPTED_SECRET__From__TPM2B_ENCRYPTED_SECRET(const TPM2B_ENCRYPTED_SECRET *pSecret);
