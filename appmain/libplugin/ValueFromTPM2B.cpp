@@ -9,6 +9,12 @@
 // 提供一组 TPM2B_* 数据转换工具(C++ 接口)
 // ============================================================================
 
+/** TPMU_ENCRYPTED_SECRET from TPM2B_ENCRYPTED_SECRET */
+const TPMU_ENCRYPTED_SECRET& ValueFromTPM2B(const TPM2B_ENCRYPTED_SECRET& secret) {
+    const TPMU_ENCRYPTED_SECRET *p = (const TPMU_ENCRYPTED_SECRET *) (secret.t.secret);
+    return *p;
+}
+
 /** TPMU_NAME from TPM2B_NAME */
 const TPMU_NAME& ValueFromTPM2B(const TPM2B_NAME& name) {
     const TPMU_NAME *p = (const TPMU_NAME *) (name.t.name);
@@ -28,6 +34,13 @@ const BYTE *ValueFromTPM2B(const TPM2B_MAX_NV_BUFFER& block) {
 // ============================================================================
 // 提供一组 TPM2B_* 数据转换工具(C 接口)
 // ============================================================================
+
+/** TPMU_ENCRYPTED_SECRET from TPM2B_ENCRYPTED_SECRET */
+const TPMU_ENCRYPTED_SECRET *TPMU_ENCRYPTED_SECRET__From__TPM2B_ENCRYPTED_SECRET(
+        const TPM2B_ENCRYPTED_SECRET *pSecret
+        ) {
+    return (const TPMU_ENCRYPTED_SECRET *) (pSecret->t.secret);
+}
 
 /** TPMU_NAME from TPM2B_NAME */
 const TPMU_NAME *TPMU_NAME__From__TPM2B_NAME(const TPM2B_NAME *pName) {
