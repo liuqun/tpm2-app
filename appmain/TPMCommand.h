@@ -67,6 +67,59 @@ public:
     virtual ~Shutdown();
 };
 
+/// 哈希计算命令
+class Hash: public TPMCommand
+/// @details
+/// 调用 TPM 模块的单桢 Hash 计算命令, 输出哈希校验和,
+/// 输入数据不能超过 1024 字节.
+/// @note 当输入数据总长超过 1024 字节时, 必须改用 HashSequenceStart 命令,
+/// 将长数据分割为若干个小于 1024 字节的短包.
+/// ```
+/// // 用法示意(伪代码):
+/// TPMCommands::Hash cmd;
+/// cmd.configHashAlgorithmUsingSHA1();
+/// cmd.configInputData("abc", strlen("abc"));
+/// cmd.buildCmdPacket(sysContext);
+/// Tss2_Sys_Execute(sysContext);
+/// cmd.unpackRspPacket(sysContext);
+/// const TPM2B_DIGEST& hashDigest = cmd.outHash();
+/// // 预期输出结果
+/// // "abc" 对应的 SHA1 输出值应该是 20 字节数据, 如下:
+/// // 0xA9 0x99 0x3E 0x36 0x47 0x06 0x81 0x6A 0xBA 0x3E
+/// // 0x25 0x71 0x78 0x50 0xC2 0x6C 0x9C 0xD0 0xD8 0x9D
+/// ```
+{
+public:
+    Hash();
+    virtual void buildCmdPacket(TSS2_SYS_CONTEXT *ctx);
+    virtual void unpackRspPacket(TSS2_SYS_CONTEXT *ctx);
+    virtual ~Hash();
+    /** 指定要使用哈希算法为 SHA1 */
+    void configHashAlgorithmUsingSHA1();
+    /** 指定要使用哈希算法为 SHA256 */
+    void configHashAlgorithmUsingSHA256();
+    /** 指定要使用哈希算法为 SHA384 */
+    void configHashAlgorithmUsingSHA384();
+    /**
+     * 指定输入数据
+     */
+    void configInputData(const void *data, ///< 输入数据
+            UINT16 length ///< 输入数据的总字节数, 取值范围 [0, 1024] 字节
+            );
+    /** 擦除临时缓存的输入数据 */
+    void eraseCachedInputData();
+    /**
+     * 输出哈希计算的结果, 即摘要值
+     */
+    const TPM2B_DIGEST& outHash();
+    /**
+     * 输出相应的 ticket 值作为辅助数据.
+     *
+     * 后续执行签名等操作时需要该 ticket 值作为依据.
+     */
+    const TPMT_TK_HASHCHECK& outValidationTicket();
+};
+
 /// 新建授权会话命令
 class StartAuthSession: public TPMCommand
 /// 授权会话类型可以是 HMAC 会话或 Policy 会话.
