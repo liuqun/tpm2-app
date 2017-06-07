@@ -288,6 +288,77 @@ int main(int argc, char *argv[])
     {
         fprintf(stderr, "Unknown error happened in TPM command FlushLoadedKeyNode\n");
     }
+    // ------------------------------------------------------------------------
+    printf("\n测试 LoadExternal 和 HMAC 命令\n");
+    TPMCommands::LoadExternal loadextn;
+    TPMCommands::HMAC hmac; // 单条 HMAC 命令, 可以处理不超过 1024 字节数据
+
+    const UINT16 KeySize = 20; // 单位: 字节
+    UINT8 keyBuffer[KeySize] = //
+    {   /** HMAC-SHA-1 测试用例来自 https://tools.ietf.org/html/rfc2202#section-3 */
+        0x0b, 0x0b, 0x0b, 0x0b,
+        0x0b, 0x0b, 0x0b, 0x0b,
+        0x0b, 0x0b, 0x0b, 0x0b,
+        0x0b, 0x0b, 0x0b, 0x0b,
+        0x0b, 0x0b, 0x0b, 0x0b
+    };
+    const char data[] = "Hi There"; // HMAC-SHA-1 测试数据, 来自 https://tools.ietf.org/html/rfc2202#section-3
+
+    loadextn.configHierarchy(TPM_RH_NULL);
+    loadextn.configSensitiveDataBits(keyBuffer, KeySize);
+    loadextn.configHMACKeyUsingHashAlgorithm();
+    const char ExternalKeyPassword[] = "";
+    const UINT16 ExternalKeyPasswordLen = strlen(ExternalKeyPassword);
+    loadextn.configKeyAuthValue(ExternalKeyPassword, ExternalKeyPasswordLen);
+    hmac.configAuthSession(TPM_RS_PW);
+    hmac.configAuthPassword(ExternalKeyPassword, ExternalKeyPasswordLen);
+    hmac.configInputData(data, strlen(data));
+    hmac.configUsingHashAlgorithmSHA1();
+    printf("发送 LoadExternal 命令, 加载外部密钥节点\n");
+    try
+    {
+        framework.sendCommand(loadextn);
+        framework.fetchResponse(loadextn);
+        const TPM_HANDLE h = loadextn.outObjectHandle();
+        const TPM2B_NAME& keyName = loadextn.outName();
+        printf("成功加载外部密钥, 返回的密钥句柄为 h=0x%08X\n", h);
+        printf("LoadExternal 命令返回的节点: keyName.t.size=%d\n", keyName.t.size);
+        printf("keyName data: ");
+        for (size_t i=0; i<keyName.t.size; i++)
+        {
+            printf(" 0x%02X,", keyName.t.name[i]);
+        }
+        printf("\n");
+
+        TPM_HANDLE keyHandle = loadextn.outObjectHandle();
+        hmac.configHMACKey(keyHandle);
+
+        printf("发送 HMAC 命令\n");
+        framework.sendCommand(hmac);
+        framework.fetchResponse(hmac);
+
+        const TPM2B_DIGEST& result = hmac.outHMAC();
+        printf("指定的密钥句柄为 keyHandle=0x%08X\n", keyHandle);
+        printf("对称密钥的内容为: 0x");
+        for (UINT16 i=0; i<KeySize; i++)
+        {
+            printf("%02x", keyBuffer[i]);
+        }
+        printf("\n");
+        printf("输入明文消息为: \"%s\"\n", data);
+        printf("HMAC 输出结果如下, result data:\n");
+        for (UINT16 i=0; i<result.t.size; i++)
+        {
+            printf("0x%02X ", result.t.buffer[i]);
+        }
+        printf("\n");
+        printf("should match: 0xb617318655057264e28bc0b6fb378c8ef146be00\n");
+        printf("(这组 HMAC-SHA-1 测试数据, 选自 RFC2202 , 网址为: https://tools.ietf.org/html/rfc2202#section-3 )\n");
+    }
+    catch (...)
+    {
+        fprintf(stderr, "Unknown error happened in TPM command FlushLoadedKeyNode\n");
+    }
 
     // 测试结束需要手动切断与 TSS resource manager 之间的连接
     framework.disconnect();
