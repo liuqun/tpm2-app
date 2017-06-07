@@ -114,6 +114,36 @@ int main(int argc, char *argv[])
 
     // 测试开始, 首先建立与 TSS resource manager 连接
     framework.connectToResourceManager(hostname, port);
+    // ---------------------------------------
+    printf("\n");
+    printf("测试 Hash 命令\n");
+    const char szMessage[] = "abc";
+    printf("SHA1 测试用例-1 strMessage: \"%s\"\n", szMessage);
+    TPMCommands::Hash hash;
+    hash.configHashAlgorithmUsingSHA1();
+    hash.configInputData(szMessage, strlen(szMessage));
+    try
+    {
+        framework.sendCommand(hash);
+        framework.fetchResponse(hash);
+
+        printf("打印 SHA1 摘要结果如下:\n");
+        const TPM2B_DIGEST& hashDigest = hash.outHash();
+        printf("hashDigest.t.size=%d\n", hashDigest.t.size);
+        printf("hashDigest data: ");
+        for (size_t i=0; i<hashDigest.t.size; i++)
+        {
+            printf("0x%02X ", hashDigest.t.buffer[i]);
+        }
+        printf("\n");
+        #define MY_SHA1_TEST_DIGEST "0xA9 0x99 0x3E 0x36 0x47 0x06 0x81 0x6A 0xBA 0x3E 0x25 0x71 0x78 0x50 0xC2 0x6C 0x9C 0xD0 0xD8 0x9D"
+        printf("It should match: %s\n", MY_SHA1_TEST_DIGEST);
+    }
+    catch (...)
+    {
+        fprintf(stderr, "Unknown Error\n");
+    }
+
 
     // ---------------------------------------
     printf("\n");
