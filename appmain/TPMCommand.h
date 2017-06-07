@@ -120,6 +120,89 @@ public:
     const TPMT_TK_HASHCHECK& outValidationTicket();
 };
 
+/// HMAC 计算命令
+class HMAC: public TPMCommand
+/// @details
+/// 调用 TPM 模块对外提供的的单桢 HMAC 计算命令, 输出基于哈希值的消息认证码(即 HMAC),
+/// 输入数据不能超过 1024 字节.
+/// @note 当输入数据总长超过 1024 字节时, 必须改用 HMACSequenceStart 命令,
+/// 将长数据分割为若干个小于 1024 字节的短包.
+/// ```
+/// // 用法示意(伪代码):
+/// TPMCommands::HMAC cmd;
+/// cmd.configInputData("abc", strlen("abc"));
+/// cmd.configUsingHashAlgorithmSHA1();
+/// cmd.configHMACKey(keyHandle); // 该密钥句柄应来自 Load/LoadExternal/ContextLoad 命令的输出句柄
+/// cmd.configAuthSession(TPM_RS_PW); // 选择密钥授权方式(以 TPM_RS_PW 为例)
+/// cmd.configAuthPassword(keyPassword, keyPasswordLength); // 调用密钥句柄执行操作时需提供相应的授权密码
+/// cmd.buildCmdPacket(sysContext);
+/// Tss2_Sys_Execute(sysContext);
+/// cmd.unpackRspPacket(sysContext);
+/// const TPM2B_DIGEST& out = cmd.outHMAC();
+/// ```
+/// @see RFC2104: [HMAC: Keyed-Hashing for Message Authentication](https://tools.ietf.org/html/rfc2104), 网址为: https://tools.ietf.org/html/rfc2104
+/// @see RFC2202: [Test Cases for HMAC-MD5 and HMAC-SHA-1](https://tools.ietf.org/html/rfc2202). RFC2202 中提供了几组典型的 HMAC-SHA-1 测试用例, 网址为 https://tools.ietf.org/html/rfc2202#section-3
+{
+public:
+    HMAC();
+    virtual void buildCmdPacket(TSS2_SYS_CONTEXT *ctx);
+    virtual void unpackRspPacket(TSS2_SYS_CONTEXT *ctx);
+    virtual ~HMAC();
+    /** 指定 HMAC 内部使用的哈希算法为 SHA1 */
+    void configUsingHashAlgorithmSHA1();
+    /** 指定 HMAC 内部使用的哈希算法为 SHA256 */
+    void configUsingHashAlgorithmSHA256();
+    /** 指定 HMAC 内部使用的哈希算法为 SHA384 */
+    void configUsingHashAlgorithmSHA384();
+    /**
+     * 指定输入数据
+     */
+    void configInputData(const void *data, ///< 输入数据
+            UINT16 length ///< 输入数据的总字节数, 取值范围 [0, 1024] 字节
+            );
+    /**
+     * 擦除临时缓存的输入数据
+     * @see configInputData()
+     */
+    void eraseCachedInputData();
+    /**
+     * 指定 HMAC 使用的密钥(通常选取 KeyedHash 型对称密钥)
+     *
+     * Configure the handle for the symmetric signing key providing the HMAC key.
+     * Auth Index: 1
+     * Auth Role: USER
+     *
+     * @see configAuthSession()
+     * @see configAuthPassword()
+     */
+    void configHMACKey(TPM_HANDLE keyHandle ///< 对称密钥句柄. 该句柄应来自 Load/LoadExternal/ContextLoad 命令的输出句柄.
+            );
+    /**
+     * 指定访问 HMAC key 授权方式(通过哪种会话校验授权值)
+     * @see configHMACKey()
+     */
+    virtual void configAuthSession(
+            TPMI_SH_AUTH_SESSION authSessionHandle=TPM_RS_PW ///< 会话句柄, 可选取值包括: 明文密码授权会话句柄 TPM_RS_PW, 其他 HMAC/Policy 会话句柄
+            );
+    /**
+     * 指定 HMAC key 的访问授权密码(授权值)
+     * @see configHMACKey()
+     */
+    virtual void configAuthPassword(
+            const void *password, ///< 句柄授权数据
+            UINT16 length ///< 授权数据长度(单位: 字节)
+            );
+    /**
+     * 擦除之前临时缓存的密码
+     * @see configAuthPassword()
+     */
+    virtual void eraseCachedAuthPassword();
+    /**
+     * 输出计算结果 HMAC, 即: 基于哈希值的消息认证码
+     */
+    const TPM2B_DIGEST& outHMAC();
+};
+
 /// 新建授权会话命令
 class StartAuthSession: public TPMCommand
 /// 授权会话类型可以是 HMAC 会话或 Policy 会话.
