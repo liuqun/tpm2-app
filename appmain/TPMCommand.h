@@ -589,6 +589,115 @@ public:
     void eraseCachedOutputData();
 };
 
+/// 加载外部密钥
+class LoadExternal: public TPMCommand
+/// @details
+/// 加载用户自定义的一个外部密钥到 TPM 内部, 作为一个独立的密钥树主节点.
+/// "独立"是指该节点底下不能悬挂其他子节点, 节点本身也不能被复制到其他密钥树下.
+{
+public:
+    LoadExternal();
+    virtual void buildCmdPacket(TSS2_SYS_CONTEXT *ctx);
+    virtual void unpackRspPacket(TSS2_SYS_CONTEXT *ctx);
+    ~LoadExternal();
+    /**
+     * 指定新的密钥树的创建位置
+     *
+     * 该函数指定新创建的密钥树主节点应位于哪个位置.
+     * 为了能够访问相应的位置句柄, 调用该函数之后应再调用:
+     * TPMCommand::configAuthSession() 以及 TPMCommand::configAuthPassword() 等函数填写具体授权信息.
+     *
+     * @param hierarchy 指定在何处创建新密钥树. 可选值包括:
+     * - 0x40000007: TPM_RH_NULL
+     * - 0x40000001: TPM_RH_OWNER
+     * - 0x4000000C: TPM_RH_PLATFORM
+     * - 0x4000000B: TPM_RH_ENDORSEMENT
+     */
+    void configHierarchy(TPMI_RH_HIERARCHY hierarchy=TPM_RH_NULL);
+    /**
+     * 配置(或变更)密钥授权值(或授权访问密码)
+     *
+     * @param keyAuthValue 为即将创建的新密钥节点指定一个授权密码
+     * @param size 授权值字节数, 可以等于 0 表示使用 EmptyAuth
+     *
+     * @see eraseCachedKeyAuthValue()
+     */
+    void configKeyAuthValue(const void *keyAuthValue, UINT16 size=0);
+    /**
+     * 擦除密钥授权值(授权访问密码)
+     *
+     * 清除成员函数configKeyAuthValue()中指定的节点授权访问密+额外的敏感数据
+     * @see configKeyAuthValue()
+     */
+    void eraseCachedKeyAuthValue();
+    /**
+     * 指定密钥的公开数据(按TPM2B_PUBLIC格式指定)
+     */
+    void configPublicData(
+          const TPM2B_PUBLIC& inPublic ///< 引用公开数据, 按 TPM2B_PUBLIC 数据结构输入
+          );
+    /**
+     * 指定密钥的公开数据(按TPMT_PUBLIC格式指定)
+     */
+    void configPublicData(
+          const TPMT_PUBLIC& publicArea ///< 引用公开数据, 按 TPMT_PUBLIC 数据结构输入
+          );
+#if 0 // TODO: 稍后在开放此接口(此接口用于单独编辑 public data 中的 nameAlg 字段)
+//  /**
+//   * 指定生成密钥树节点名称时采用哈希算法
+//   *
+//   * 注意请区别密钥节点名称哈希算法和 HMAC 之中的哈希算法, nameAlg 与 hashAlg 两者是无关的.
+//   *
+//   * @param nameAlg 哈希算法, 备选值包括:
+//   * - 0x0004 TPM_ALG_SHA1
+//   * - 0x000B TPM_ALG_SHA256
+//   * - 0x000C TPM_ALG_SHA384
+//   * - 0x000D TPM_ALG_SHA512
+//   * - 0x0012 TPM_ALG_SM3_256
+//   * - 0x0010 TPM_ALG_NULL (表示不进行哈希, 由 LoadExternal() 创建的密钥节点默认可采用选项)
+//   */
+//  void configKeyNameAlg(TPMI_ALG_HASH nameAlg=TPM_ALG_NULL);
+#endif
+    /**
+     * 指定密钥类型为 HMAC 同时设置其哈希算法
+     */
+    void configHMACKeyUsingHashAlgorithm(
+          TPMI_ALG_HASH hashAlg=TPM_ALG_SHA1 ///< 同时指定 HMAC 计算时使用的哈希算法. 头文件 TPMCommand.h 中提供了一个默认值. 另外请留意 nameAlg 与 hashAlg 是两个不同的设置选项, 避免混淆.
+          );
+    /**
+     * 配置用户自定义的对称密钥敏感内容(比如 HMAC 密钥的数据)
+     *
+     * @param dataLength 最大长度不能超过MAX_SYM_DATA=128字节(对称密钥总位数不超过1024位).
+     * 当密钥类型被配置为不对称密钥时, 例如 RSA-2048 的私钥长度就是 128 字节(1024位). 注: RSA 的私钥长度是其公钥长度的一半
+     * @see MAX_RSA_KEY_BYTES / MAX_RSA_KEY_BITS=2048
+     * 当密钥类型被配置为对称密钥时, 例如 AES-256 最多只用到其中的前 32 字节(256位),
+     * 超出 32 字节的部分可能会被 TPM 拒收或舍弃.
+     * @see MAX_SYM_KEY_BYTES=32 / MAX_SYM_KEY_BITS=256
+     */
+    void configSensitiveDataBits(const void *dataBuffer, UINT16 dataLength);
+    void configSensitiveDataBits(const TPM2B_SENSITIVE_DATA& data
+            );
+#if 0 // TODO: 此处预留若干接口考虑未来再支持其他类型的密钥
+//  /**
+//   * 设置密钥类型(指定类型)
+//   * @param type 哈希算法, 备选值包括:
+//   * - 0x0008 TPM_ALG_KEYEDHASH
+//   * - 0x0025 TPM_ALG_SYMCIPHER
+//   * - 0x0001 TPM_ALG_RSA
+//   * - 0x0010 TPM_ALG_NULL (表示这是一个存储自定义数据的节点)
+//   */
+//  void configKeyType(TPMI_ALG_PUBLIC type);
+//  /**
+//   * 指定密钥类型为 AES 对称密钥: 128 bit, CFB 模式.
+//   */
+#endif
+    void configKeyTypeSymmetricAES128CFB();
+    /** 输出密钥的句柄 */
+    TPM_HANDLE& outObjectHandle();
+    /** 输出新节点的节点名 */
+    const TPM2B_NAME& outName();
+};
+
 /// 读取密钥的公开数据
 class ReadPublic: public TPMCommand
 /// @details
