@@ -1,6 +1,8 @@
 /* encoding: utf-8 */
 // Copyright (c) 2017, 青岛中怡智能安全研究院有限公司
 // All rights reserved.
+#include <stdexcept>
+using std::exception;
 #include <cstdio>
 #include <cstdlib>
 using namespace std;
@@ -310,6 +312,10 @@ int main(int argc, char *argv[])
         framework.sendCommand(flush1);
         framework.fetchResponse(flush1);
     }
+    catch (std::exception& e)
+    {
+        fprintf(stderr, "flush1: An error happened: %s\n", e.what());
+    }
     catch (...)
     {
         fprintf(stderr, "Unknown error happened in TPM command FlushLoadedKeyNode\n");
@@ -321,6 +327,10 @@ int main(int argc, char *argv[])
         printf("发送命令, 让 TPM 删除 Create/Load 命令输出的子节点\n");
         framework.sendCommand(flush2);
         framework.fetchResponse(flush2);
+    }
+    catch (std::exception& e)
+    {
+        fprintf(stderr, "flush2: An error happened: %s\n", e.what());
     }
     catch (...)
     {
@@ -407,6 +417,30 @@ int main(int argc, char *argv[])
         printf("发送命令, 让 TPM 删除之前 LoadExternal 命令加载的节点\n");
         framework.sendCommand(flush3);
         framework.fetchResponse(flush3);
+    }
+    catch (std::exception& e)
+    {
+        fprintf(stderr, "flush3: An error happened: %s\n", e.what());
+    }
+    catch (...)
+    {
+        fprintf(stderr, "Unknown error happened in TPM command FlushLoadedKeyNode\n");
+    }
+    // ------------------------------------
+    printf("\n");
+    printf("测试 Flush 命令(case 4 检查能否识别无效句柄):\n");
+    try
+    {
+        TPMCommands::FlushAuthSession flush4;
+        TPM_HANDLE invalidSessionHandle = 0xFF000000;
+        printf("取值 invalidSessionHandle=0x%X\n", invalidSessionHandle);
+        flush4.configSessionHandleToFlushAway(invalidSessionHandle);
+        framework.sendCommand(flush4);
+        framework.fetchResponse(flush4);
+    }
+    catch (std::exception& e)
+    {
+        fprintf(stderr, "flush4: An error happened: %s\n", e.what());
     }
     catch (...)
     {
