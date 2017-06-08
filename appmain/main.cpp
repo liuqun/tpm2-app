@@ -262,6 +262,43 @@ int main(int argc, char *argv[])
     {
         fprintf(stderr, "Unknown Error\n");
     }
+    // ------------------------------------------------------------------------
+    printf("\n");
+    bool HMACTestIsEnabled=true;
+    if (HMACTestIsEnabled)
+    {
+        printf("测试 HMAC 命令\n");
+        TPMCommands::HMAC hmac; // 单条 HMAC 命令, 可以处理不超过 1024 字节数据
+
+        const char data[] = "Hi There"; // HMAC-SHA-1 测试数据, 来自 https://tools.ietf.org/html/rfc2202#section-3
+
+        TPM_HANDLE childKeyHandle = load.outObjectHandle();
+        hmac.configHMACKey(childKeyHandle); // 引用之前成功加载的 HMAC 密钥句柄
+        hmac.configAuthSession(TPM_RS_PW);
+        hmac.configAuthPassword(ChildPassword, ChildPasswordLen);
+        hmac.configInputData(data, strlen(data));
+        hmac.configUsingHashAlgorithmSHA1();
+        try /* 发送 HMAC 命令 */
+        {
+            framework.sendCommand(hmac);
+            framework.fetchResponse(hmac);
+
+            printf("指定的密钥句柄为 childKeyHandle=0x%08X\n", childKeyHandle);
+            printf("输入明文消息为: \"%s\"\n", data);
+            printf("HMAC 输出结果如下, result.t.buffer = { /* 十六进制数据 */\n");
+            const TPM2B_DIGEST& result = hmac.outHMAC();
+            for (UINT16 i=0; i<result.t.size; i++)
+            {
+                printf(" %02X", result.t.buffer[i]);
+            }
+            printf("\n");
+            printf("}\n");
+        }
+        catch (...)
+        {
+            fprintf(stderr, "TPMCommands::HMAC throws an unexpected exception!\n");
+        }
+    }
     // ------------------------------------
     printf("\n");
     printf("测试 Flush 命令:\n");
