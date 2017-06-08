@@ -6,6 +6,10 @@
 #include "TPMCommand.h"
 using namespace TPMCommands;
 
+#include <cstdio>
+#include <stdexcept>
+using std::invalid_argument;
+
 // ============================================================================
 // 自定义输入输出参数格式
 // ============================================================================
@@ -39,7 +43,10 @@ void FlushAuthSession::configSessionHandleToFlushAway(TPMI_SH_AUTH_SESSION sessi
     const UINT8 ht ///< handle type
             = (UINT8) (sessionHandle >> HR_SHIFT);
     if (ht < TPM_HT_HMAC_SESSION || ht > TPM_HT_POLICY_SESSION) {
-        throw "Invalid session handle!";
+        char msg[256];
+        const size_t MaxLen = sizeof(msg);
+        snprintf(msg, MaxLen, "Invalid session handle 0x%X (Handle type 0x%02X is not a session)", sessionHandle, ht);
+        throw std::invalid_argument(msg);
     }
     m_in->flushHandle = (TPMI_DH_CONTEXT) sessionHandle;
 }
@@ -76,7 +83,10 @@ void FlushLoadedKeyNode::configKeyNodeToFlushAway(TPM_HANDLE keyHandle) {
     const UINT8 ht ///< handle type
             = (UINT8) (keyHandle >> HR_SHIFT);
     if (ht < TPM_HT_TRANSIENT || ht > TPM_HT_PERSISTENT) {
-        throw "Invalid key handle!";
+        char msg[256];
+        const size_t MaxLen = sizeof(msg);
+        snprintf(msg, MaxLen, "Invalid key handle 0x%X (Handle type 0x%02X is not a key)", keyHandle, ht);
+        throw std::invalid_argument(msg);
     }
     m_in->flushHandle = (TPMI_DH_CONTEXT) keyHandle;
 }

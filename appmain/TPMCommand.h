@@ -236,7 +236,11 @@ public:
     FlushAuthSession();
     virtual void buildCmdPacket(TSS2_SYS_CONTEXT *ctx);
     virtual ~FlushAuthSession();
-    /** 指定要清除哪个授权会话 */
+    /**
+     * 指定要清除哪个授权会话
+     *
+     * @throws std::invalid_argument 句柄类型不合理的情况下抛出该异常, 并附带一个字符串作为说明
+     */
     void configSessionHandleToFlushAway(
             TPMI_SH_AUTH_SESSION sessionHandle ///< 授权会话句柄
             );
@@ -249,7 +253,11 @@ public:
     FlushLoadedKeyNode();
     virtual void buildCmdPacket(TSS2_SYS_CONTEXT *ctx);
     virtual ~FlushLoadedKeyNode();
-    /** 指定要清除哪个密钥节点 */
+    /**
+     * 指定要清除哪个密钥节点
+     *
+     * @throws std::invalid_argument 句柄类型不合理的情况下抛出该异常, 并附带一个字符串作为说明
+     */
     void configKeyNodeToFlushAway(
             TPM_HANDLE keyHandle ///< 密钥节点句柄
             );
