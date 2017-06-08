@@ -85,6 +85,13 @@ HMACKeyCreate::HMACKeyCreate() {
     m_in->inPublic.t.publicArea.parameters.keyedHashDetail.scheme.scheme = TPM_ALG_HMAC;
     m_in->inPublic.t.publicArea.parameters.keyedHashDetail.scheme.details.hmac.hashAlg = TPM_ALG_NULL;
 
+    /* 重新设置对象默认属性 */
+    m_in->inPublic.t.publicArea.objectAttributes.val = 0;
+    m_in->inPublic.t.publicArea.objectAttributes.fixedTPM = 1;
+    m_in->inPublic.t.publicArea.objectAttributes.fixedParent = 1;
+    m_in->inPublic.t.publicArea.objectAttributes.sensitiveDataOrigin = 1;
+    m_in->inPublic.t.publicArea.objectAttributes.userWithAuth = 1; // 访问密钥须提供用户授权信息
+    m_in->inPublic.t.publicArea.objectAttributes.sign = 1; // 对于对称密钥而言该标记位的含义并非签名, 而是代表可否用于对称加解密
 }
 
 // ============================================================================
@@ -97,6 +104,14 @@ KeyedHashXORKeyCreate::KeyedHashXORKeyCreate() {
     m_in->inPublic.t.publicArea.parameters.keyedHashDetail.scheme.scheme = TPM_ALG_XOR;
     m_in->inPublic.t.publicArea.parameters.keyedHashDetail.scheme.details.exclusiveOr.hashAlg = TPM_ALG_NULL;
     m_in->inPublic.t.publicArea.parameters.keyedHashDetail.scheme.details.exclusiveOr.kdf = TPM_ALG_KDF1_SP800_108;
+
+    /* 重新设置对象默认属性 */
+    m_in->inPublic.t.publicArea.objectAttributes.val = 0;
+    m_in->inPublic.t.publicArea.objectAttributes.fixedTPM = 1;
+    m_in->inPublic.t.publicArea.objectAttributes.fixedParent = 1;
+    m_in->inPublic.t.publicArea.objectAttributes.sensitiveDataOrigin = 1;
+    m_in->inPublic.t.publicArea.objectAttributes.userWithAuth = 1; // 访问密钥须提供用户授权信息
+    m_in->inPublic.t.publicArea.objectAttributes.sign = 1; // 对于对称密钥而言该标记位的含义并非签名, 而是代表可否用于对称加解密
 }
 
 // ============================================================================
