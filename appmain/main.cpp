@@ -302,24 +302,25 @@ int main(int argc, char *argv[])
     // ------------------------------------
     printf("\n");
     printf("测试 Flush 命令:\n");
-    TPMCommands::FlushLoadedKeyNode flush;
-    flush.configKeyNodeToFlushAway(createprimary.outObjectHandle());
     try
     {
-        printf("发送命令, 让 TPM 删除根节点\n");
-        framework.sendCommand(flush);
-        framework.fetchResponse(flush);
+        TPMCommands::FlushLoadedKeyNode flush1;
+        flush1.configKeyNodeToFlushAway(createprimary.outObjectHandle());
+        printf("发送命令, 让 TPM 删除 CreatePrimary 命令创建的主节点\n");
+        framework.sendCommand(flush1);
+        framework.fetchResponse(flush1);
     }
     catch (...)
     {
         fprintf(stderr, "Unknown error happened in TPM command FlushLoadedKeyNode\n");
     }
-    flush.configKeyNodeToFlushAway(load.outObjectHandle());
     try
     {
-        printf("发送命令, 让 TPM 删除子节点\n");
-        framework.sendCommand(flush);
-        framework.fetchResponse(flush);
+        TPMCommands::FlushLoadedKeyNode flush2;
+        flush2.configKeyNodeToFlushAway(load.outObjectHandle());
+        printf("发送命令, 让 TPM 删除 Create/Load 命令输出的子节点\n");
+        framework.sendCommand(flush2);
+        framework.fetchResponse(flush2);
     }
     catch (...)
     {
@@ -391,6 +392,21 @@ int main(int argc, char *argv[])
         printf("\n");
         printf("should match: 0xb617318655057264e28bc0b6fb378c8ef146be00\n");
         printf("(这组 HMAC-SHA-1 测试数据, 选自 RFC2202 , 网址为: https://tools.ietf.org/html/rfc2202#section-3 )\n");
+    }
+    catch (...)
+    {
+        fprintf(stderr, "An unknown error happened in TPM command LoadExternal or HMAC\n");
+    }
+    // ------------------------------------
+    printf("\n");
+    printf("测试 Flush 命令:\n");
+    try
+    {
+        TPMCommands::FlushLoadedKeyNode flush3;
+        flush3.configKeyNodeToFlushAway(loadextn.outObjectHandle());
+        printf("发送命令, 让 TPM 删除之前 LoadExternal 命令加载的节点\n");
+        framework.sendCommand(flush3);
+        framework.fetchResponse(flush3);
     }
     catch (...)
     {
