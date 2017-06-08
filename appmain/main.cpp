@@ -296,6 +296,11 @@ int main(int argc, char *argv[])
             printf("\n");
             printf("}\n");
         }
+        catch (TSS2_RC rc)
+        {
+            fprintf(stderr, "hmac: TSS2 error code 0x%X was returned from libsapi\n", rc);
+            fprintf(stderr, "Please try to run \"tpm2_rc_decode 0x%X\" to see more details.\n", rc);
+        }
         catch (...)
         {
             fprintf(stderr, "TPMCommands::HMAC throws an unexpected exception!\n");
@@ -402,6 +407,11 @@ int main(int argc, char *argv[])
         printf("\n");
         printf("should match: 0xb617318655057264e28bc0b6fb378c8ef146be00\n");
         printf("(这组 HMAC-SHA-1 测试数据, 选自 RFC2202 , 网址为: https://tools.ietf.org/html/rfc2202#section-3 )\n");
+    }
+    catch (TSS2_RC rc)
+    {
+        fprintf(stderr, "loadextn or hmac has returned a TSS2 error code 0x%X\n", rc);
+        fprintf(stderr, "Please try to run \"tpm2_rc_decode 0x%X\" to see more details.\n", rc);
     }
     catch (...)
     {
@@ -576,6 +586,7 @@ void MyAppFramework::fetchResponse(TPMCommand& cmd, int32_t timeout)
     {
         fprintf(stderr, "Tss2_Sys_ExecuteFinish() returns err = 0x%X\n", err);
         // TODO: throw/raise an expection to the up level
+        throw err;
     }
     cmd.unpackRspPacket(m_sysContext); // 调用相应的 TSS 软件栈 Tss2_Sys_XXXX_Complete() 函数
 }
