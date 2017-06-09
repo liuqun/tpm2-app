@@ -758,6 +758,109 @@ public:
     void eraseCachedOutputData();
 };
 
+/// 数字签名
+class Sign: public TPMCommand
+/**
+ * 数字签名以及签名校验命令用法如下:
+ * ```
+ * // 用法示意(伪代码):
+ * TPMCommands::Hash hash;
+ * TPMCommands::Sign sign;
+ *
+ * hash.configHashAlgorithmUsingSHA1();
+ * hash.configInputData("abc", strlen("abc"));
+ * hash.buildCmdPacket(sysContext);
+ * Tss2_Sys_Execute(sysContext);
+ * hash.unpackRspPacket(sysContext);
+ * const TPM2B_DIGEST& digest = hash.outHash();
+ * const TPMT_TK_HASHCHECK& ticket = hash.outValidationTicket();
+ * // 注: "abc" 3个字符的 SHA1 摘要应为
+ * // 0xA9 0x99 0x3E 0x36 0x47 0x06 0x81 0x6A 0xBA 0x3E
+ * // 0x25 0x71 0x78 0x50 0xC2 0x6C 0x9C 0xD0 0xD8 0x9D
+ * sign.configDigestToBeSigned(digest.t.buffer, digest.t.size);
+ * sign.configValidationTicket(ticket);
+ * sign.configSigningKey(keyHandle); // 签名密钥的句柄应来自 Load/LoadExternal/ContextLoad 命令所的输出句柄
+ * sign.configAuthSession(TPM_RS_PW); // 选择密钥授权方式(以 TPM_RS_PW 为例)
+ * sign.configAuthPassword(keyPassword, keyPasswordLength); // 调用密钥句柄执行操作时需提供相应的授权密码
+ * sign.buildCmdPacket(sysContext);
+ * Tss2_Sys_Execute(sysContext);
+ * sign.unpackRspPacket(sysContext);
+ * const TPMT_SIGNATURE& result = sign.outSignature();
+ * ```
+ * @see TPMCommands::Hash 计算哈希摘要
+ * @see TPMCommands::VerifySignature 校验数字签名
+ * @see TPMT_SIGNATURE 输出的数字签名的 C 语言结构体格式定义
+ */
+{
+public:
+    Sign();
+    virtual void buildCmdPacket(TSS2_SYS_CONTEXT *ctx);
+    virtual void unpackRspPacket(TSS2_SYS_CONTEXT *ctx);
+    virtual ~Sign();
+    /**
+     * 输入待签名的哈希摘要数据
+     */
+    void configDigestToBeSigned(const void *digestData, ///< 输入摘要数据. 取值必须为有效指针以免造成内存段错误.
+            UINT16 digestLength ///< 输入摘要长度, 取值范围 (0, MAX_DIGEST_SIZE] 字节
+            );
+    /**
+     * 提供相应的证明用于确认该哈希摘要是之前由 TPM 输出的
+     *
+     * The proof that digest was created by the TPM
+     * If keyHandle is not a restricted signing key, then this may be a NULL Ticket with tag = 0x8024 (TPM_ST_HASHCHECK or TPM_ST_CHECKHASH).
+     *
+     * @see TPMCommands::Hash::outValidationTicket()
+     */
+    void configValidationTicket(const TPMT_TK_HASHCHECK& ticket);
+    /**
+     * 指定数字签名操作要使用的签名密钥(不对称密钥, 可选取 RSA, ECC 等类型)
+     *
+     * - Auth Index: 1
+     * - Auth Role: USER
+     *
+     * @see configAuthSession()
+     * @see configAuthPassword()
+     */
+    void configSigningKey(TPM_HANDLE keyHandle ///< 签名密钥句柄是一个32位整数数值, 由 Load/LoadExternal/ContextLoad 命令输出.
+            );
+    /**
+     * 指定访问 HMAC key 授权方式(通过哪种会话校验授权值)
+     * @see configHMACKey()
+     */
+    virtual void configAuthSession(
+            TPMI_SH_AUTH_SESSION authSessionHandle=TPM_RS_PW ///< 会话句柄, 可选取值包括: 明文密码授权会话句柄 TPM_RS_PW, 其他 HMAC/Policy 会话句柄
+            );
+    /**
+     * 指定的访问授权密码(授权值)
+     * @see configHMACKey()
+     */
+    virtual void configAuthPassword(
+            const void *password, ///< 句柄授权数据
+            UINT16 length ///< 授权数据长度(单位: 字节)
+            );
+    /**
+     * 擦除之前临时缓存的密码
+     * @see configAuthPassword()
+     */
+    virtual void eraseCachedAuthPassword();
+    /**
+     * 输出数字签名计算结果
+     * @return 数字签名计算结果.
+     */
+    const TPMT_SIGNATURE& outSignature();
+};
+
+/// 签名校验
+class VerifySignature: public TPMCommand
+/// @see TPMCommands::Sign
+{
+public:
+    VerifySignature();
+    virtual void buildCmdPacket(TSS2_SYS_CONTEXT *ctx);
+    virtual void unpackRspPacket(TSS2_SYS_CONTEXT *ctx);
+    virtual ~VerifySignature();
+};
+
 namespace NV
 /// @brief 盛放与非易失性存储器相关的读写命令的命名空间.
 {
