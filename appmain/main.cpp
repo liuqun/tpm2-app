@@ -17,6 +17,7 @@ using namespace std;
     const uint16_t DEFAULT_RESMGR_TPM_PORT=DEFAULT_SIMULATOR_TPM_PORT;
 #endif
 #include "TPMCommand.h"
+#include "TestCase.h"
 
 /* 排版格式: 以下函数均使用4个空格缩进，不使用Tab缩进 */
 
@@ -878,4 +879,22 @@ size_t GetSocketTctiContextSize()
         exit(0);
     }
     return size;
+}
+
+void TestCase::HashingShortMessageWithin1024Bytes(const char *hostname, unsigned int port)
+{
+    // 测试开始, 首先建立与 TSS resource manager 连接
+    MyAppFramework framework;
+    framework.connectToResourceManager(hostname, (uint16_t) (port & 0xFFFF));
+    // 测试结束需要手动切断与 TSS resource manager 之间的连接
+    framework.disconnect();
+}
+
+void TestCase::HashingLongMessageMoreThan1024Bytes(const char *hostname, unsigned int port)
+{
+    // 测试开始, 首先建立与 TSS resource manager 连接
+    MyAppFramework framework;
+    framework.connectToResourceManager(hostname, (uint16_t) (port & 0xFFFF));
+    // 测试结束需要手动切断与 TSS resource manager 之间的连接
+    framework.disconnect();
 }
