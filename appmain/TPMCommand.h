@@ -825,14 +825,14 @@ public:
             );
     /**
      * 指定访问 HMAC key 授权方式(通过哪种会话校验授权值)
-     * @see configHMACKey()
+     * @see configSigningKey()
      */
     virtual void configAuthSession(
             TPMI_SH_AUTH_SESSION authSessionHandle=TPM_RS_PW ///< 会话句柄, 可选取值包括: 明文密码授权会话句柄 TPM_RS_PW, 其他 HMAC/Policy 会话句柄
             );
     /**
      * 指定的访问授权密码(授权值)
-     * @see configHMACKey()
+     * @see configSigningKey()
      */
     virtual void configAuthPassword(
             const void *password, ///< 句柄授权数据
