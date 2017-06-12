@@ -898,3 +898,240 @@ void TestCase::HashingLongMessageMoreThan1024Bytes(const char *hostname, unsigne
     // 测试结束需要手动切断与 TSS resource manager 之间的连接
     framework.disconnect();
 }
+
+void TestCase::SigningAndSignatureVerification(const char *hostname, unsigned int port)
+{
+    // 测试开始, 首先建立与 TSS resource manager 连接
+    MyAppFramework framework;
+    framework.connectToResourceManager(hostname, (uint16_t) (port & 0xFFFF));
+    ///////////////////////////////////////////////////////////////////////////
+    printf("步骤一: 手动执行一条 Hash 命令, 输出一个哈希摘要值\n");
+    const char szMessage[] = "abc";
+    TPMCommands::Hash hash;
+    try
+    {
+        hash.configHashAlgorithmUsingSHA1();
+        hash.configInputData(szMessage, strlen(szMessage));
+
+        framework.sendCommand(hash);
+        framework.fetchResponse(hash);
+
+        printf("SHA1 测试用例-1 szMessage[]: \"%s\", (共%lu字节)\n", szMessage, strlen(szMessage));
+        printf("打印 SHA1 摘要结果如下:\n");
+        const TPM2B_DIGEST& hashDigest = hash.outHash();
+        printf("hashDigest.t.size=%d\n", hashDigest.t.size);
+        printf("hashDigest data: ");
+        for (size_t i=0; i<hashDigest.t.size; i++)
+        {
+            printf("0x%02X ", hashDigest.t.buffer[i]);
+        }
+        printf("\n");
+        printf("It should match: \n");
+        printf("\t 0xA9 0x99 0x3E 0x36 0x47 0x06 0x81 0x6A 0xBA 0x3E\n");
+        printf("\t 0x25 0x71 0x78 0x50 0xC2 0x6C 0x9C 0xD0 0xD8 0x9D\n");
+    }
+    catch (...)
+    {
+        fprintf(stderr, "Unknown Error\n");
+    }
+    printf("\n");
+    ///////////////////////////////////////////////////////////////////////////
+    printf("步骤二: 调用 CreatePrimary 命令, 生成一个主节点(Primary 节点)\n");
+    TPMCommands::CreatePrimary createprimary;
+    const char *primaryPassword = "abcd";
+    const UINT16 primaryPasswordLen = strlen(primaryPassword);
+    try
+    {
+        TPMT_PUBLIC publicArea;
+        WriteMyRSAKeyParameters(publicArea, 2048); // 使用子函数内预先的设置密钥算法类型
+        const TPMI_RH_HIERARCHY hierarchy = TPM_RH_OWNER;
+        if (TPM_RH_NULL == hierarchy)
+        {
+            printf("We will create a new key in TPM NULL-hierarchy.\n");
+        }
+        else if (TPM_RH_OWNER == hierarchy)
+        {
+            printf("We will create a new key in TPM Storage-hierarchy(TPM_RH_OWNER).\n");
+        }
+        createprimary.configAuthHierarchy(hierarchy);
+        createprimary.configAuthSession(TPM_RS_PW);
+        createprimary.configAuthPassword("", 0);
+        createprimary.configKeyNameAlg(TPM_ALG_SHA1);
+        createprimary.configKeySensitiveData(primaryPassword, primaryPasswordLen, "", 0);
+        createprimary.configPublicData(publicArea);
+
+        framework.sendCommand(createprimary);
+        framework.fetchResponse(createprimary);
+
+        // 分析 CreatePrimary 命令创建的句柄
+        printf("New primary key created successfully! Handle=0x%8.8x\n", createprimary.outObjectHandle());
+
+        // 分析 CreatePrimary 命令创建的密钥节点名
+        const TPM2B_NAME& keyName = createprimary.outName();
+        printf("keyName.t.size=%d\n", keyName.t.size);
+        printf("keyName data: ");
+        for (size_t i=0; i<keyName.t.size; i++)
+        {
+            printf("0x%02X,", keyName.t.name[i]);
+        }
+        printf("\n");
+    }
+    catch (...)
+    {
+        fprintf(stderr, "Unknown Error\n");
+    }
+    printf("\n");
+    ///////////////////////////////////////////////////////////////////////////
+    printf("步骤三: 组合调用 Create 和 Load 命令, 在主节点下加载密钥子节点\n");
+    TPMCommands::Create create;
+    TPMCommands::Load load;
+    const char *ChildPassword = "child password";
+    const UINT16 ChildPasswordLen = strlen("child password");
+    try
+    {
+        printf("We will create a child key node under parent(0x%08X).\n",
+                createprimary.outObjectHandle());
+        create.configAuthParent(createprimary.outObjectHandle());
+        create.configAuthSession(TPM_RS_PW);
+        create.configAuthPassword(primaryPassword, primaryPasswordLen);
+        create.configKeySensitiveData(ChildPassword, ChildPasswordLen, "", 0);
+        TPM2B_PUBLIC inPublic;
+        {
+            inPublic.t.publicArea.type = TPM_ALG_RSA;
+            inPublic.t.publicArea.nameAlg = TPM_ALG_SHA1;
+            inPublic.t.publicArea.objectAttributes.val = 0;
+            inPublic.t.publicArea.objectAttributes.fixedTPM = 1;
+            inPublic.t.publicArea.objectAttributes.fixedParent = 1;
+            inPublic.t.publicArea.objectAttributes.restricted = 0; // 必须清除 restricted 标志位. 原因未知, 需要进一步研究
+            inPublic.t.publicArea.objectAttributes.userWithAuth = 1;
+            inPublic.t.publicArea.objectAttributes.sensitiveDataOrigin = 1;
+            inPublic.t.publicArea.objectAttributes.decrypt = 1; // 暂时不确定 decrypt 是否影响签名或签名校验
+            inPublic.t.publicArea.objectAttributes.sign = 1; // 单独设置属性签名密钥
+            inPublic.t.publicArea.authPolicy.t.size = 0;
+//          inPublic.t.publicArea.parameters.rsaDetail.symmetric.algorithm = TPM_ALG_AES;
+            inPublic.t.publicArea.parameters.rsaDetail.symmetric.algorithm = TPM_ALG_NULL; // algorithm 不能被设置为 TPM_ALG_AES, 原因未知, 需要进一步研究
+            inPublic.t.publicArea.parameters.rsaDetail.symmetric.keyBits.aes = 128;
+            inPublic.t.publicArea.parameters.rsaDetail.symmetric.mode.aes = TPM_ALG_ECB;
+            inPublic.t.publicArea.parameters.rsaDetail.scheme.scheme = TPM_ALG_NULL;
+            inPublic.t.publicArea.parameters.rsaDetail.keyBits = 2048;
+            inPublic.t.publicArea.parameters.rsaDetail.exponent = 0;
+            inPublic.t.publicArea.unique.rsa.t.size = 0;
+            if (TPM_ALG_RSA == inPublic.t.publicArea.type)
+            {
+                printf("Key type: RSA.\n");
+                printf("Key size: %d bits.\n", inPublic.t.publicArea.parameters.rsaDetail.keyBits);
+            }
+        }
+        create.configPublicData(inPublic);
+
+        framework.sendCommand(create);
+        framework.fetchResponse(create);
+        printf("Child key node has been created successfully.\n");
+
+        load.configAuthParent(createprimary.outObjectHandle());
+        load.configAuthSession(TPM_RS_PW);
+        load.configAuthPassword(primaryPassword, primaryPasswordLen);
+        load.configPrivateData(create.outPrivate());
+        load.configPublicData(create.outPublic());
+
+        framework.sendCommand(load);
+        framework.fetchResponse(load);
+
+        const TPM2B_NAME& keyName = load.outName();
+        printf("Load 命令取回的结果是: keyName.t.size=%d\n", keyName.t.size);
+        printf("keyName data: ");
+        for (size_t i=0; i<keyName.t.size; i++)
+        {
+            printf(" 0x%02X,", keyName.t.name[i]);
+        }
+        printf("\n");
+        printf("Child key node has been loaded successfully. Child handle=0x%08X\n", load.outObjectHandle());
+    }
+    catch (...)
+    {
+        fprintf(stderr, "Unknown Error\n");
+    }
+    printf("\n");
+    ///////////////////////////////////////////////////////////////////////////
+    printf("步骤四: 测试 Sign 命令\n");
+    TPMCommands::Sign sign;
+    try
+    {
+        const TPM2B_DIGEST& digest = hash.outHash();
+        const TPMT_TK_HASHCHECK& ticket = hash.outValidationTicket();
+
+        sign.configDigestToBeSigned(digest.t.buffer, digest.t.size);
+        sign.configValidationTicket(ticket);
+        sign.configSigningKey(load.outObjectHandle());
+        sign.configAuthPassword(ChildPassword, ChildPasswordLen);
+        sign.configAuthSession(TPM_RS_PW);
+
+        framework.sendCommand(sign);
+        framework.fetchResponse(sign);
+
+        // 分析 Sign 命令输出的数字签名
+        const TPMT_SIGNATURE& signature = sign.outSignature();
+        printf("sigAlg=0x%04X (备注: TPM_ALG_RSASSA=0x%04X)\n", signature.sigAlg, TPM_ALG_RSASSA);
+        printf("hashAlg=0x%04X (备注: TPM_ALG_SHA1=0x%04X)\n", signature.signature.any.hashAlg, TPM_ALG_SHA1);
+        if (signature.sigAlg == TPM_ALG_RSASSA)
+        {
+            const TPM2B sig = signature.signature.rsassa.sig.b;
+            printf("数字签名 size=%d\n", sig.size);
+            printf("---- BEGIN ----\n");
+            for (UINT16 i = 0; i < sig.size; i++)
+            {
+                printf("%02X", sig.buffer[i]);
+                if ((i & 0x1F) == 0x1F)
+                {
+                    printf("\n");
+                }
+            }
+            printf("----- END -----\n");
+        }
+    }
+    catch (...)
+    {
+        fprintf(stderr, "Unknown Error\n");
+    }
+    printf("\n");
+    ///////////////////////////////////////////////////////////////////////////
+    printf("最后一步: 清理测试现场, 调用 Flush 命令清除密钥节点\n");
+    TPMCommands::FlushLoadedKeyNode flush1;
+    TPMCommands::FlushLoadedKeyNode flush2;
+    try
+    {
+        flush1.configKeyNodeToFlushAway(createprimary.outObjectHandle());
+
+        printf("发送命令, 让 TPM 删除 CreatePrimary 命令创建的主节点\n");
+        framework.sendCommand(flush1);
+        framework.fetchResponse(flush1);
+    }
+    catch (std::exception& e)
+    {
+        fprintf(stderr, "flush1: An error happened: %s\n", e.what());
+    }
+    catch (...)
+    {
+        fprintf(stderr, "Unknown error happened in TPM command FlushLoadedKeyNode\n");
+    }
+    try
+    {
+        flush2.configKeyNodeToFlushAway(load.outObjectHandle());
+
+        printf("发送命令, 让 TPM 删除 Create/Load 命令输出的子节点\n");
+        framework.sendCommand(flush2);
+        framework.fetchResponse(flush2);
+    }
+    catch (std::exception& e)
+    {
+        fprintf(stderr, "flush2: An error happened: %s\n", e.what());
+    }
+    catch (...)
+    {
+        fprintf(stderr, "Unknown error happened in TPM command FlushLoadedKeyNode\n");
+    }
+    printf("\n");
+    ///////////////////////////////////////////////////////////////////////////
+    // 测试结束需要手动切断与 TSS resource manager 之间的连接
+    framework.disconnect();
+}

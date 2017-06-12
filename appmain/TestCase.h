@@ -10,6 +10,7 @@ namespace TestCase {
 
 void HashingShortMessageWithin1024Bytes(const char *hostname="127.0.0.1", unsigned int port=2323);
 void HashingLongMessageMoreThan1024Bytes(const char *hostname="127.0.0.1", unsigned int port=2323);
+void SigningAndSignatureVerification(const char *hostname="127.0.0.1", unsigned int port=2323);
 
 }
 
