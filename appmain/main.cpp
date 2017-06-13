@@ -639,6 +639,71 @@ void TestCase::HashingShortMessageWithin1024Bytes(const char *hostname, unsigned
     // 测试开始, 首先建立与 TSS resource manager 连接
     MyAppFramework framework;
     framework.connectToResourceManager(hostname, (uint16_t) (port & 0xFFFF));
+    ///////////////////////////////////////////////////////////////////////////
+    TPMCommands::Hash hash;
+    const char *szMessage = "abc";
+    printf("测试用例-1 szMessage: \"%s\", (共%lu字节)\n", szMessage, strlen(szMessage));
+    printf("预期的 SHA256 哈希摘要={ba:78:16:bf:8f:01:cf:ea:41:41:40:de:5d:ae:22:23:b0:03:61:a3:96:17:7a:9c:b4:10:ff:61:f2:00:15:ad}\n");
+    printf("预期的 SHA1 哈希摘要={a9:99:3e:36:47:06:81:6a:ba:3e:25:71:78:50:c2:6c:9c:d0:d8:9d}\n");
+    try
+    {
+        printf("配置第一条命令帧(计算SHA256)\n");
+        hash.configHashAlgorithmUsingSHA256();
+        hash.configInputData(szMessage, strlen(szMessage));
+
+        printf("发送命令帧\n");
+        framework.sendCommand(hash);
+        framework.fetchResponse(hash);
+
+        printf("取回的 SHA256 摘要结果如下:\n");
+        {
+            const TPM2B_DIGEST& digest = hash.outHash();
+            printf("digest.t.size=%d\n", digest.t.size);
+            printf("digest.t.data={");
+            if (digest.t.size >= 1)
+            {
+                int size = digest.t.size;
+                int last = size-1;
+                for (int i=0; i<=size-2; i++)
+                {
+                    printf("%02x:", digest.t.buffer[i]);
+                }
+                printf("%02x", digest.t.buffer[last]);
+            }
+            printf("}\n");
+        }
+
+        printf("配置第二条命令帧(计算SHA1)\n");
+        hash.configHashAlgorithmUsingSHA1();
+        hash.configInputData(szMessage, strlen(szMessage));
+
+        printf("发送命令桢\n");
+        framework.sendCommand(hash);
+        framework.fetchResponse(hash);
+
+        printf("取回的 SHA1 摘要结果如下:\n");
+        {
+            const TPM2B_DIGEST& digest = hash.outHash();
+            printf("digest.t.size=%d\n", digest.t.size);
+            printf("digest.t.data={");
+            if (digest.t.size >= 1)
+            {
+                int size = digest.t.size;
+                int last = size-1;
+                for (int i=0; i<=size-2; i++)
+                {
+                    printf("%02x:", digest.t.buffer[i]);
+                }
+                printf("%02x", digest.t.buffer[last]);
+            }
+            printf("}\n");
+        }
+    }
+    catch (...)
+    {
+        fprintf(stderr, "Unknown Error\n");
+    }
+    ///////////////////////////////////////////////////////////////////////////
     // 测试结束需要手动切断与 TSS resource manager 之间的连接
     framework.disconnect();
 }
