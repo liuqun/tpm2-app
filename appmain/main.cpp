@@ -725,28 +725,33 @@ void TestCase::SigningAndSignatureVerification(const char *hostname, unsigned in
     ///////////////////////////////////////////////////////////////////////////
     printf("步骤一: 手动执行一条 Hash 命令, 输出一个哈希摘要值\n");
     const char szMessage[] = "abc";
+    printf("SHA256 测试用例-1 szMessage[]: \"%s\", (共%lu字节)\n", szMessage, strlen(szMessage));
+    printf("预期的 SHA256 哈希摘要={ba:78:16:bf:8f:01:cf:ea:41:41:40:de:5d:ae:22:23:b0:03:61:a3:96:17:7a:9c:b4:10:ff:61:f2:00:15:ad}\n");
     TPMCommands::Hash hash;
     try
     {
-        hash.configHashAlgorithmUsingSHA1();
+        hash.configHashAlgorithmUsingSHA256();
         hash.configInputData(szMessage, strlen(szMessage));
 
+        printf("发送 Hash 命令\n");
         framework.sendCommand(hash);
         framework.fetchResponse(hash);
 
-        printf("SHA1 测试用例-1 szMessage[]: \"%s\", (共%lu字节)\n", szMessage, strlen(szMessage));
-        printf("打印 SHA1 摘要结果如下:\n");
-        const TPM2B_DIGEST& hashDigest = hash.outHash();
-        printf("hashDigest.t.size=%d\n", hashDigest.t.size);
-        printf("hashDigest data: ");
-        for (size_t i=0; i<hashDigest.t.size; i++)
+        printf("取回 SHA256 摘要结果如下:\n");
+        const TPM2B_DIGEST& digest = hash.outHash();
+        printf("digest.t.size=%d\n", digest.t.size);
+        printf("digest.t.data={");
+        if (digest.t.size >= 1)
         {
-            printf("0x%02X ", hashDigest.t.buffer[i]);
+            int size = digest.t.size;
+            int last = size-1;
+            for (int i=0; i<=size-2; i++)
+            {
+                printf("%02x:", digest.t.buffer[i]);
+            }
+            printf("%02x", digest.t.buffer[last]);
         }
-        printf("\n");
-        printf("It should match: \n");
-        printf("\t 0xA9 0x99 0x3E 0x36 0x47 0x06 0x81 0x6A 0xBA 0x3E\n");
-        printf("\t 0x25 0x71 0x78 0x50 0xC2 0x6C 0x9C 0xD0 0xD8 0x9D\n");
+        printf("}\n");
     }
     catch (...)
     {
@@ -879,6 +884,7 @@ void TestCase::SigningAndSignatureVerification(const char *hostname, unsigned in
         const TPMT_TK_HASHCHECK& ticket = hash.outValidationTicket();
 
         sign.configDigestToBeSigned(digest.t.buffer, digest.t.size);
+        sign.configScheme(DigitalSignatureSchemes::SHA256RSASSA);
         sign.configValidationTicket(ticket);
         sign.configSigningKey(load.outObjectHandle());
         sign.configAuthPassword(ChildPassword, ChildPasswordLen);
@@ -890,7 +896,7 @@ void TestCase::SigningAndSignatureVerification(const char *hostname, unsigned in
         // 分析 Sign 命令输出的数字签名
         const TPMT_SIGNATURE& signature = sign.outSignature();
         printf("sigAlg=0x%04X (备注: TPM_ALG_RSASSA=0x%04X)\n", signature.sigAlg, TPM_ALG_RSASSA);
-        printf("hashAlg=0x%04X (备注: TPM_ALG_SHA1=0x%04X)\n", signature.signature.any.hashAlg, TPM_ALG_SHA1);
+        printf("hashAlg=0x%04X (备注: TPM_ALG_SHA1=0x%04X,  TPM_ALG_SHA256=0x%04X)\n", signature.signature.any.hashAlg, TPM_ALG_SHA1, TPM_ALG_SHA256);
         if (signature.sigAlg == TPM_ALG_RSASSA)
         {
             const TPM2B sig = signature.signature.rsassa.sig.b;
