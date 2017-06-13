@@ -33,7 +33,7 @@ libplugin.a: ALWAYS_REBUILD
 	cp libplugin/$@ ./$@
 
 main.o: main.cpp TPMCommand.h
-	$(COMPILE_c) -o $@ $<
+	$(COMPILE_cpp) -o $@ $<
 
 main: main.o libplugin.a
 	$(CXX) $(LD_FLAGS) -o $@ $^ $(LIBS)
