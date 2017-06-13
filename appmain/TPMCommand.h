@@ -39,6 +39,15 @@ public:
     virtual void eraseCachedAuthPassword();
 };
 
+/// @namespace DigitalSignatureSchemes
+/// @brief 盛放一些常用的数字签名配置选项.
+/// @see TPMCommands::Sign::configScheme()
+namespace DigitalSignatureSchemes
+{
+extern const TPMT_SIG_SCHEME SHA1RSASSA; ///< 选择用 RSASSA 密钥对 SHA1 哈希摘要进行签名
+extern const TPMT_SIG_SCHEME SHA256RSASSA; ///< 选择用 RSASSA 密钥对 SHA256 哈希摘要进行签名
+}
+
 /// @namespace TPMCommands
 /// @brief 盛放各种 TPM 命令对象的命名空间.
 namespace TPMCommands
@@ -812,6 +821,9 @@ public:
      * @see TPMCommands::Hash::outValidationTicket()
      */
     void configValidationTicket(const TPMT_TK_HASHCHECK& ticket);
+    /** 指定数字签名算法(scheme) */
+    void configScheme(const TPMT_SIG_SCHEME& inScheme=DigitalSignatureSchemes::SHA1RSASSA ///< 指定数字签名算法, 此处提供的默认值仅作为参考, 最终生产环境下安全性和效率两者之间存在矛盾, 有时候无法兼顾, 建议结合客户实际需求进行优化选择.
+            );
     /**
      * 指定数字签名操作要使用的签名密钥(不对称密钥, 可选取 RSA, ECC 等类型)
      *

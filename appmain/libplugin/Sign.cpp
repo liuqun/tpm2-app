@@ -136,3 +136,54 @@ void Sign::unpackRspPacket(TSS2_SYS_CONTEXT *ctx) {
 const TPMT_SIGNATURE& Sign::outSignature() {
     return m_out->signature;
 }
+
+// ============================================================================
+// 配置 Scheme
+// ----------------------------------------------------------------------------
+void Sign::configScheme(const TPMT_SIG_SCHEME& inScheme ///< 头文件 TPMCommand.h 中指定了一个默认值=TPMCommands::Sign::DefaultSigningScheme
+            ) {
+    switch(inScheme.scheme) {
+        case TPM_ALG_ECDAA:
+            m_in->inScheme.details.ecdaa.count = inScheme.details.ecdaa.count; ///< @note 只有 TPMS_SCHEME_ECDAA 结构体额外附加一个 2 字节的 count 字段, 故进行单独处理
+            /* [[fallthrough]]; */
+        case TPM_ALG_RSASSA:
+        case TPM_ALG_RSAPSS:
+        case TPM_ALG_ECDSA:
+        case TPM_ALG_SM2:
+        case TPM_ALG_ECSCHNORR:
+        case TPM_ALG_HMAC:
+            m_in->inScheme.details.any.hashAlg = inScheme.details.any.hashAlg;
+            break;
+        default: // 对其他厂家自定义格式(或未知格式)的 Scheme 联合体, 我们不建议进行赋值操作.
+            // 因此此处手动拷贝整个 details 数据块.
+            TPMU_SIG_SCHEME *p;
+            p = &(m_in->inScheme.details);
+            memcpy(p, &(inScheme.details), sizeof(m_in->inScheme.details));
+            break;
+    }
+    m_in->inScheme.scheme = inScheme.scheme;
+}
+
+// ============================================================================
+// 常用的数字签名 schemes 选项
+// ----------------------------------------------------------------------------
+
+/// 选择用 RSASSA 密钥对 SHA1 哈希摘要进行签名
+const TPMT_SIG_SCHEME DigitalSignatureSchemes::SHA1RSASSA = {
+    .scheme = TPM_ALG_RSASSA,
+    .details = {
+        .rsassa = {
+            .hashAlg = TPM_ALG_SHA1,
+         },
+    },
+};
+
+/// 选择用 RSASSA 密钥对 SHA256 哈希摘要进行签名
+const TPMT_SIG_SCHEME DigitalSignatureSchemes::SHA256RSASSA = {
+    .scheme = TPM_ALG_RSASSA,
+    .details = {
+        .rsassa = {
+            .hashAlg = TPM_ALG_SHA256,
+         },
+    },
+};
