@@ -883,6 +883,7 @@ void TestCase::SigningAndSignatureVerification(const char *hostname, unsigned in
         const TPM2B_DIGEST& digest = hash.outHash();
         const TPMT_TK_HASHCHECK& ticket = hash.outValidationTicket();
 
+        printf("digest.t.size=%d\n", digest.t.size);
         sign.configDigestToBeSigned(digest.t.buffer, digest.t.size);
         sign.configScheme(DigitalSignatureSchemes::SHA256RSASSA);
         sign.configValidationTicket(ticket);
@@ -969,6 +970,7 @@ void TestCase::SigningAndSignatureVerification(const char *hostname, unsigned in
         printf("发送命令, 让 TPM 删除 CreatePrimary 命令创建的主节点\n");
         framework.sendCommand(flush1);
         framework.fetchResponse(flush1);
+        printf("flush1 成功删除了主节点\n");
     }
     catch (std::exception& e)
     {
@@ -985,6 +987,7 @@ void TestCase::SigningAndSignatureVerification(const char *hostname, unsigned in
         printf("发送命令, 让 TPM 删除 Create/Load 命令输出的子节点\n");
         framework.sendCommand(flush2);
         framework.fetchResponse(flush2);
+        printf("flush2 成功删除了子节点\n");
     }
     catch (std::exception& e)
     {
