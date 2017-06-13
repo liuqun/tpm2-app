@@ -32,7 +32,7 @@ libplugin.a: ALWAYS_REBUILD
 	$(MAKE) -C libplugin $@
 	cp libplugin/$@ ./$@
 
-main.o: main.cpp TPMCommand.h
+main.o: main.cpp TPMCommand.h TestCase.h
 	$(COMPILE_cpp) -o $@ $<
 
 main: main.o libplugin.a
