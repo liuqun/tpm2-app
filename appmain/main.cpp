@@ -912,6 +912,46 @@ void TestCase::SigningAndSignatureVerification(const char *hostname, unsigned in
         fprintf(stderr, "Unknown Error\n");
     }
     printf("\n");
+    /////////////////////////////////////////////////////////////////////////////
+    printf("步骤五: 这里只对之前生成的数字签名进行一次自我校验\n");
+    TPMCommands::VerifySignature verifysignature;
+    try
+    {
+        const TPM2B_DIGEST& digest = hash.outHash();
+        const TPMT_SIGNATURE& signature = sign.outSignature();
+        TPM_HANDLE keyHandle = load.outObjectHandle();
+
+        verifysignature.configSigningKey(keyHandle);
+        verifysignature.configDigestWithSignature(digest, signature);
+
+        framework.sendCommand(verifysignature);
+        framework.fetchResponse(verifysignature);
+
+        printf("数字签名校验的结果: 有效\n");
+        printf("本次操作附带生成一条操作凭据 validataion ticket:\n");
+        const TPMT_TK_VERIFIED& ticket = verifysignature.outValidationTicket();
+        printf("ticket.tag = 0x%X(备注: 期望值 TPM_ST_VERIFIED=0x%X)\n", ticket.tag, TPM_ST_VERIFIED);
+    }
+    catch (TSS2_RC rc)
+    {
+        TSS2_RC mask1 = TSS2_ERROR_LEVEL_MASK; // 错误级别掩码
+        TSS2_RC mask2 = (0xFF - TPM_RC_P); // TPM 级别应答码详细错误码
+        if ((TSS2_TPM_ERROR_LEVEL == (rc & mask1)) && (TPM_RC_SIGNATURE == (rc & mask2)))
+        {
+            printf("发现数字签名不匹配, TPM_RC_SIGNATURE(0x%X), rc=0x%X\n", TPM_RC_SIGNATURE, rc);
+            printf("TPM_RC_SIGNATURE(0x%X)\n", TPM_RC_SIGNATURE);
+        }
+        else
+        {
+            fprintf(stderr, "TPM has returned a unknown error response code 0x%X\n", rc);
+            fprintf(stderr, "Please try to run \"tpm2_rc_decode 0x%X\" to see more details.\n", rc);
+        }
+    }
+    catch (...)
+    {
+        fprintf(stderr, "An unknown error happened in TPM command VerifySignature\n");
+    }
+    printf("\n");
     ///////////////////////////////////////////////////////////////////////////
     printf("最后一步: 清理测试现场, 调用 Flush 命令清除密钥节点\n");
     TPMCommands::FlushLoadedKeyNode flush1;
