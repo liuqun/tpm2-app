@@ -868,34 +868,11 @@ public:
     /**
      * 指定数字签名操作要使用的签名密钥(不对称密钥, 可选取 RSA, ECC 等类型)
      *
-     * - Auth Index: 1
-     * - Auth Role: USER
-     *
-     * @see configAuthSession()
-     * @see configAuthPassword()
+     * The handle of public key that will be used in the validation.
+     * - Auth Index: None (不需要授权)
      */
     void configSigningKey(TPM_HANDLE keyHandle ///< 签名密钥句柄是一个32位整数数值, 由 Load/LoadExternal/ContextLoad 命令输出.
             );
-    /**
-     * 指定访问 HMAC key 授权方式(通过哪种会话校验授权值)
-     * @see configSigningKey()
-     */
-    virtual void configAuthSession(
-            TPMI_SH_AUTH_SESSION authSessionHandle=TPM_RS_PW ///< 会话句柄, 可选取值包括: 明文密码授权会话句柄 TPM_RS_PW, 其他 HMAC/Policy 会话句柄
-            );
-    /**
-     * 指定的访问授权密码(授权值)
-     * @see configSigningKey()
-     */
-    virtual void configAuthPassword(
-            const void *password, ///< 句柄授权数据
-            UINT16 length ///< 授权数据长度(单位: 字节)
-            );
-    /**
-     * 擦除之前临时缓存的密码
-     * @see configAuthPassword()
-     */
-    virtual void eraseCachedAuthPassword();
     /**
      * 若 TPM 判定签名校验有效, 则 TPM 应答桢中将携带一个 validation ticket, 作为辅助证明
      * @note 如果签名不符 TPM 不会返回上述结构体, 而是直接应答错误码 TPM_RC_SIGNATURE

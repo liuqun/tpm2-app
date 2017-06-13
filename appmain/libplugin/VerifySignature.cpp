@@ -29,6 +29,9 @@ VerifySignature::VerifySignature() {
     m_in = new VerifySignature_In;
     m_out = new VerifySignature_Out;
 
+    // 命令帧携带的 AuthValue 个数
+    m_cmdAuthsCount = 0; // 取公钥进行签名校验时不需要授权
+
     /* 初始化输入缓冲区, 并设置默认值 */
     m_cmdAuthsCount = 1; // 需授权访问 keyHandle
     m_in->keyHandle = 0x80FFFFFF; // 随意设置一个无效的初始值, 便于调试程序
@@ -45,29 +48,6 @@ VerifySignature::~VerifySignature() {
     eraseCachedAuthPassword();
     delete m_in;
     delete m_out;
-}
-
-// ============================================================================
-// 指定访问签名密钥授权方式(通过哪种会话进行授权校验)
-// ----------------------------------------------------------------------------
-void VerifySignature::configAuthSession(TPMI_SH_AUTH_SESSION authSessionHandle) {
-    m_sendAuthValues[0].sessionHandle = authSessionHandle;
-}
-
-// ============================================================================
-// 指定授权值访问密码(属于敏感数据)
-// ----------------------------------------------------------------------------
-void VerifySignature::configAuthPassword(const void *password, UINT16 length) {
-    // 调用父类的成员函数完成设置密码的具体工作
-    TPMCommand::configAuthPassword(password, length);
-}
-
-// ============================================================================
-// 擦除临时缓存的授权值
-// ----------------------------------------------------------------------------
-void VerifySignature::eraseCachedAuthPassword() {
-    // 调用父类的成员函数擦除密码
-    TPMCommand::eraseCachedAuthPassword();
 }
 
 // ============================================================================
@@ -99,15 +79,13 @@ void VerifySignature::configDigestWithSignature(const TPM2B_DIGEST& digest, cons
 // 组建命令帧报文
 // ----------------------------------------------------------------------------
 void VerifySignature::buildCmdPacket(TSS2_SYS_CONTEXT *ctx) {
-    // 先调用底层 API 填写输入参数
+    // 直接调用底层 API 填写输入参数
     Tss2_Sys_VerifySignature_Prepare( // NOTE: 此处应检查函数返回值
             ctx, // TSS2_SYS_CONTEXT *sysContext 上下文
             m_in->keyHandle, // 指定算法
             &(m_in->digest), // 输入待签名的哈希摘要
             &(m_in->signature) // 输入待校验的数字签名
             );
-    // 然后显式调用父类的成员函数
-    TPMCommand::buildCmdPacket(ctx);
 }
 
 // ============================================================================
