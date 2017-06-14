@@ -73,7 +73,6 @@ public:
     void disconnect();
 };
 
-static void WriteMyRSAKeyParameters(TPMT_PUBLIC& publicArea, TPMI_RSA_KEY_BITS keyBits=2048);
 static void SHA1HMACGenerationDemoProgram(const char *hostname="127.0.0.1", unsigned int port=2323);
 static void SHA1HMACGenerationDemoProgramUsingPrivateHMACKey(const char *hostname="127.0.0.1", unsigned int port=2323);
 static void SHA256HMACGenerationDemoProgram(const char *hostname="127.0.0.1", unsigned int port=2323);
@@ -120,33 +119,6 @@ int main(int argc, char *argv[])
     // 优先执行子函数中的测试内容
     TestCase::SigningAndSignatureVerification(hostname, port);
     return (0);
-}
-
-static void WriteMyRSAKeyParameters(TPMT_PUBLIC& publicArea, TPMI_RSA_KEY_BITS keyBits)
-{
-    publicArea.type = TPM_ALG_RSA;
-    publicArea.nameAlg = TPM_ALG_SHA1;
-    publicArea.objectAttributes.val = 0;
-    publicArea.objectAttributes.fixedTPM = 1;
-    publicArea.objectAttributes.fixedParent = 1;
-    publicArea.objectAttributes.restricted = 1;
-    publicArea.objectAttributes.userWithAuth = 1;
-    publicArea.objectAttributes.sensitiveDataOrigin = 1;
-    publicArea.objectAttributes.decrypt = 1;
-    publicArea.objectAttributes.sign = 0;
-    publicArea.authPolicy.t.size = 0;
-    publicArea.parameters.rsaDetail.symmetric.algorithm = TPM_ALG_AES;
-    publicArea.parameters.rsaDetail.symmetric.keyBits.aes = 128;
-    publicArea.parameters.rsaDetail.symmetric.mode.aes = TPM_ALG_ECB;
-    publicArea.parameters.rsaDetail.scheme.scheme = TPM_ALG_NULL;
-    publicArea.parameters.rsaDetail.keyBits = keyBits;
-    publicArea.parameters.rsaDetail.exponent = 0;
-    publicArea.unique.rsa.t.size = 0;
-    if (TPM_ALG_RSA == publicArea.type)
-    {
-        printf("Key type: RSA.\n");
-        printf("Key size: %d bits.\n", publicArea.parameters.rsaDetail.keyBits);
-    }
 }
 
 #include <cassert>
@@ -419,7 +391,32 @@ void TestCase::SigningAndSignatureVerification(const char *hostname, unsigned in
     try
     {
         TPMT_PUBLIC publicArea;
-        WriteMyRSAKeyParameters(publicArea, 2048); // 使用子函数内预先的设置密钥算法类型
+
+        publicArea.type = TPM_ALG_RSA;
+        publicArea.nameAlg = TPM_ALG_SHA1;
+        publicArea.objectAttributes.val = 0;
+        publicArea.objectAttributes.fixedTPM = 1;
+        publicArea.objectAttributes.fixedParent = 1;
+        publicArea.objectAttributes.restricted = 1;
+        publicArea.objectAttributes.userWithAuth = 1;
+        publicArea.objectAttributes.sensitiveDataOrigin = 1;
+        publicArea.objectAttributes.decrypt = 1;
+        publicArea.objectAttributes.sign = 0;
+        publicArea.authPolicy.t.size = 0;
+        publicArea.parameters.rsaDetail.symmetric.algorithm = TPM_ALG_AES;
+        publicArea.parameters.rsaDetail.symmetric.keyBits.aes = 128;
+        publicArea.parameters.rsaDetail.symmetric.mode.aes = TPM_ALG_ECB;
+        publicArea.parameters.rsaDetail.scheme.scheme = TPM_ALG_NULL;
+        publicArea.parameters.rsaDetail.keyBits = 2048;
+        publicArea.parameters.rsaDetail.exponent = 0;
+        publicArea.unique.rsa.t.size = 0;
+        if (TPM_ALG_RSA == publicArea.type)
+        {
+            printf("Key type: RSA.\n");
+            printf("Key size: %d bits.\n", publicArea.parameters.rsaDetail.keyBits);
+        }
+        createprimary.configPublicData(publicArea);
+
         const TPMI_RH_HIERARCHY hierarchy = TPM_RH_OWNER;
         if (TPM_RH_NULL == hierarchy)
         {
@@ -432,7 +429,7 @@ void TestCase::SigningAndSignatureVerification(const char *hostname, unsigned in
         createprimary.configAuthHierarchy(hierarchy);
         createprimary.configAuthSession(TPM_RS_PW);
         createprimary.configAuthPassword("", 0);
-        createprimary.configKeyNameAlg(TPM_ALG_SHA1);
+        createprimary.configKeyNameAlg(TPM_ALG_SHA1); // 备注: 前面已经设置过一次 "publicArea.nameAlg = TPM_ALG_SHA1;" 重复设置应该没有问题
         createprimary.configKeySensitiveData(primaryPassword, primaryPasswordLen, "", 0);
         createprimary.configPublicData(publicArea);
 
