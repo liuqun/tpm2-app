@@ -75,6 +75,7 @@ public:
 
 static void WriteMyRSAKeyParameters(TPMT_PUBLIC& publicArea, TPMI_RSA_KEY_BITS keyBits=2048);
 static void SHA1HMACGenerationDemoProgram(const char *hostname="127.0.0.1", unsigned int port=2323);
+static void SHA1HMACGenerationDemoProgramUsingPrivateHMACKey(const char *hostname="127.0.0.1", unsigned int port=2323);
 static void SHA256HMACGenerationDemoProgram(const char *hostname="127.0.0.1", unsigned int port=2323);
 
 int main(int argc, char *argv[])
@@ -1023,6 +1024,236 @@ void SHA1HMACGenerationDemoProgram(const char *hostname, unsigned int port)
             fprintf(stderr, "Unknown error happened in TPM command FlushLoadedKeyNode\n");
         }
     }
+    ///////////////////////////////////////////////////////////////////////////
+    // 测试结束需要手动切断与 TSS resource manager 之间的连接
+    framework.disconnect();
+}
+
+void SHA1HMACGenerationDemoProgramUsingPrivateHMACKey(const char *hostname, unsigned int port)
+{
+    printf("函数名: %s()\n", __FUNCTION__);
+    printf("本函数将演示如何在 TPM 的保护区中创建一个对称密钥并使用该密钥进行 HMAC 运算输出 HMAC 结果(即: 基于哈希摘要的消息鉴别码)\n");
+    MyAppFramework framework;
+    // 测试开始, 首先建立与 TSS resource manager 连接
+    framework.connectToResourceManager(hostname, port);
+    ///////////////////////////////////////////////////////////////////////////
+    printf("准备步骤一: 调用 Hash 命令生成一条哈希摘要备用\n");
+    const char szMessage[] = "abc";
+    printf("SHA1 测试用例-1 strMessage: \"%s\"\n", szMessage);
+    const char *ExpectedDigest = "0xA9 0x99 0x3E 0x36 0x47 0x06 0x81 0x6A 0xBA 0x3E 0x25 0x71 0x78 0x50 0xC2 0x6C 0x9C 0xD0 0xD8 0x9D";
+    printf("预期应输出的结果为: %s\n", ExpectedDigest);
+    TPMCommands::Hash hash;
+    try
+    {
+        hash.configHashAlgorithmUsingSHA1();
+        hash.configInputData(szMessage, strlen(szMessage));
+        framework.sendCommand(hash);
+        framework.fetchResponse(hash);
+
+        printf("打印 SHA1 摘要结果如下:\n");
+        const TPM2B_DIGEST& hashDigest = hash.outHash();
+        printf("hashDigest.t.size=%d\n", hashDigest.t.size);
+        printf("hashDigest data: ");
+        for (size_t i=0; i<hashDigest.t.size; i++)
+        {
+            printf("0x%02X ", hashDigest.t.buffer[i]);
+        }
+        printf("\n");
+    }
+    catch (...)
+    {
+        fprintf(stderr, "Unknown Error\n");
+    }
+    printf("\n");
+    ///////////////////////////////////////////////////////////////////////////
+    printf("准备步骤二: 调用 CreatePrimary 命令创建一个存储密钥\n");
+    const char *primaryPassword = "abcd";
+    const UINT16 primaryPasswordLen = strlen(primaryPassword);
+    TPMCommands::CreatePrimary createprimary;
+    try
+    {
+        TPMT_PUBLIC publicArea;
+
+        publicArea.type = TPM_ALG_RSA;
+        publicArea.nameAlg = TPM_ALG_SHA1;
+        publicArea.objectAttributes.val = 0;
+        publicArea.objectAttributes.fixedTPM = 1;
+        publicArea.objectAttributes.fixedParent = 1;
+        publicArea.objectAttributes.restricted = 1;
+        publicArea.objectAttributes.userWithAuth = 1;
+        publicArea.objectAttributes.sensitiveDataOrigin = 1;
+        publicArea.objectAttributes.decrypt = 1;
+        publicArea.objectAttributes.sign = 0;
+        publicArea.authPolicy.t.size = 0;
+        publicArea.parameters.rsaDetail.symmetric.algorithm = TPM_ALG_AES;
+        publicArea.parameters.rsaDetail.symmetric.keyBits.aes = 128;
+        publicArea.parameters.rsaDetail.symmetric.mode.aes = TPM_ALG_ECB;
+        publicArea.parameters.rsaDetail.scheme.scheme = TPM_ALG_NULL;
+        publicArea.parameters.rsaDetail.keyBits = 2048;
+        publicArea.parameters.rsaDetail.exponent = 0;
+        publicArea.unique.rsa.t.size = 0;
+        if (TPM_ALG_RSA == publicArea.type)
+        {
+            printf("Key type: RSA.\n");
+            printf("Key size: %d bits.\n", publicArea.parameters.rsaDetail.keyBits);
+        }
+        createprimary.configPublicData(publicArea);
+
+        const TPMI_RH_HIERARCHY hierarchy = TPM_RH_OWNER;
+        if (TPM_RH_NULL == hierarchy)
+        {
+            printf("We will create a new key in TPM NULL-hierarchy.\n");
+        }
+        else if (TPM_RH_OWNER == hierarchy)
+        {
+            printf("We will create a new key in TPM Storage-hierarchy(TPM_RH_OWNER).\n");
+        }
+        createprimary.configAuthHierarchy(hierarchy);
+        createprimary.configAuthSession(TPM_RS_PW);
+        createprimary.configAuthPassword("", 0);
+        createprimary.configKeyNameAlg(TPM_ALG_SHA1); // 备注: 前面已经设置过一次 "publicArea.nameAlg = TPM_ALG_SHA1;" 重复设置应该没有问题
+        createprimary.configKeySensitiveData(primaryPassword, primaryPasswordLen, "", 0); // 设置密钥节点密码和附加敏感数据
+        framework.sendCommand(createprimary);
+        framework.fetchResponse(createprimary);
+
+        // 分析 CreatePrimary 命令创建的句柄
+        printf("New primary key created successfully! Handle=0x%8.8x\n", createprimary.outObjectHandle());
+
+        // 分析 CreatePrimary 命令创建的密钥节点名
+        const TPM2B_NAME& keyName = createprimary.outName();
+        printf("keyName.t.size=%d\n", keyName.t.size);
+        printf("keyName data: ");
+        for (size_t i=0; i<keyName.t.size; i++)
+        {
+            printf("0x%02X,", keyName.t.name[i]);
+        }
+        printf("\n");
+    }
+    catch (...)
+    {
+        fprintf(stderr, "Unknown Error\n");
+    }
+    printf("\n");
+    ///////////////////////////////////////////////////////////////////////////
+    printf("测试步骤三: 让 TPM 创建并加载一个对称密钥, 以便稍后用于计算 HMAC 值.\n");
+    const char *ChildPassword = "child password";
+    const UINT16 ChildPasswordLen = strlen("child password");
+    TPMCommands::HMACKeyCreate create;
+    TPMCommands::Load load;
+    try
+    {
+        printf("设置 Create 命令帧参数.\n");
+        create.configAuthParent(createprimary.outObjectHandle());
+        create.configAuthSession(TPM_RS_PW);
+        create.configAuthPassword(primaryPassword, primaryPasswordLen);
+        create.configKeySensitiveData(ChildPassword, ChildPasswordLen, "", 0);
+        create.configKeyNameAlg(TPM_ALG_SHA1);
+        create.configHMACKeyParameters(TPM_ALG_SHA1);
+
+        printf("发送 Create 命令帧.\n");
+        framework.sendCommand(create);
+        framework.fetchResponse(create);
+        printf("Create 命令执行成功.\n");
+
+        printf("设置 Load 命令帧参数\n");
+        load.configAuthParent(createprimary.outObjectHandle());
+        load.configAuthSession(TPM_RS_PW);
+        load.configAuthPassword(primaryPassword, primaryPasswordLen);
+        load.configPrivateData(create.outPrivate());
+        load.configPublicData(create.outPublic());
+
+        printf("发送 Load 命令帧.\n");
+        framework.sendCommand(load);
+        framework.fetchResponse(load);
+        printf("密钥节点加载成功. Child handle=0x%08X\n", load.outObjectHandle());
+
+        const TPM2B_NAME& keyName = load.outName();
+        printf("Load 命令取回的结果是: keyName.t.size=%d\n", keyName.t.size);
+        printf("keyName data: ");
+        for (size_t i=0; i<keyName.t.size; i++)
+        {
+            printf(" 0x%02X,", keyName.t.name[i]);
+        }
+        printf("\n");
+    }
+    catch (...)
+    {
+        fprintf(stderr, "Unknown Error\n");
+    }
+    printf("\n");
+    ///////////////////////////////////////////////////////////////////////////
+    printf("测试步骤四: 测试 HMAC 命令\n");
+    const char data[] = "Hi There"; // HMAC-SHA-1 测试数据, 来自 https://tools.ietf.org/html/rfc2202#section-3
+    TPMCommands::HMAC hmac; // 单条 HMAC 命令, 可以处理不超过 1024 字节数据
+    try /* 发送 HMAC 命令 */
+    {
+        TPM_HANDLE childKeyHandle = load.outObjectHandle();
+        hmac.configHMACKey(childKeyHandle); // 引用之前成功加载的 HMAC 密钥句柄
+        hmac.configAuthSession(TPM_RS_PW);
+        hmac.configAuthPassword(ChildPassword, ChildPasswordLen);
+        hmac.configInputData(data, strlen(data));
+        hmac.configUsingHashAlgorithmSHA1();
+        framework.sendCommand(hmac);
+        framework.fetchResponse(hmac);
+
+        printf("指定的密钥句柄为 childKeyHandle=0x%08X\n", childKeyHandle);
+        printf("输入明文消息为: \"%s\"\n", data);
+        printf("HMAC 输出结果如下, result.t.buffer = { /* 十六进制数据 */\n");
+        const TPM2B_DIGEST& result = hmac.outHMAC();
+        for (UINT16 i=0; i<result.t.size; i++)
+        {
+            printf(" %02X", result.t.buffer[i]);
+        }
+        printf("\n");
+        printf("}\n");
+    }
+    catch (TSS2_RC rc)
+    {
+        fprintf(stderr, "hmac: TSS2 error code 0x%X was returned from libsapi\n", rc);
+        fprintf(stderr, "Please try to run \"tpm2_rc_decode 0x%X\" to see more details.\n", rc);
+    }
+    catch (...)
+    {
+        fprintf(stderr, "TPMCommands::HMAC throws an unexpected exception!\n");
+    }
+    printf("\n");
+    ///////////////////////////////////////////////////////////////////////////
+    printf("测试结束前调用 Flush 命令清理测试现场\n");
+    TPMCommands::FlushLoadedKeyNode flush1;
+    try
+    {
+        flush1.configKeyNodeToFlushAway(createprimary.outObjectHandle());
+        printf("发送命令, 让 TPM 删除 CreatePrimary 命令创建的主节点\n");
+        framework.sendCommand(flush1);
+        framework.fetchResponse(flush1);
+        printf("删除完毕\n");
+    }
+    catch (std::exception& e)
+    {
+        fprintf(stderr, "flush1: An error happened: %s\n", e.what());
+    }
+    catch (...)
+    {
+        fprintf(stderr, "Unknown error happened in TPM command FlushLoadedKeyNode\n");
+    }
+    TPMCommands::FlushLoadedKeyNode flush2;
+    try
+    {
+        flush2.configKeyNodeToFlushAway(load.outObjectHandle());
+        printf("发送命令, 让 TPM 删除 Create/Load 命令输出的子节点\n");
+        framework.sendCommand(flush2);
+        framework.fetchResponse(flush2);
+        printf("删除完毕\n");
+    }
+    catch (std::exception& e)
+    {
+        fprintf(stderr, "flush2: An error happened: %s\n", e.what());
+    }
+    catch (...)
+    {
+        fprintf(stderr, "Unknown error happened in TPM command FlushLoadedKeyNode\n");
+    }
+    printf("\n");
     ///////////////////////////////////////////////////////////////////////////
     // 测试结束需要手动切断与 TSS resource manager 之间的连接
     framework.disconnect();
