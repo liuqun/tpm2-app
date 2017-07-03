@@ -2,6 +2,7 @@
 #include "log.h"
 #include "test.h"
 #include "sapi/tpm20.h"
+static UINT16 get_digest_size(TPM_ALG_ID hash_alg);
 #define PCR_8   8
 /**
  * This program contains integration test for SAPI Tss2_Sys_PCR_Read
@@ -44,7 +45,7 @@ test_invoke (TSS2_SYS_CONTEXT *sapi_context)
 
     digests.count = 1;
     digests.digests[0].hashAlg = TPM_ALG_SHA1;
-    digest_size = GetDigestSize( digests.digests[0].hashAlg );
+    digest_size = get_digest_size( digests.digests[0].hashAlg );
 
     for( i = 0; i < digest_size; i++ )
     {
@@ -84,3 +85,33 @@ test_invoke (TSS2_SYS_CONTEXT *sapi_context)
     return 0;
 }
 
+typedef struct {
+    TPM_ALG_ID hash_alg;
+    UINT16 size; // Size of digest
+} HASH_SIZE_INFO;
+UINT16 get_digest_size (TPM_ALG_ID hash_alg)
+{
+    const HASH_SIZE_INFO HASH_SIZES[] = {
+        {TPM_ALG_SHA1, SHA1_DIGEST_SIZE},
+        {TPM_ALG_SHA256, SHA256_DIGEST_SIZE},
+        {TPM_ALG_SHA384, SHA384_DIGEST_SIZE},
+        {TPM_ALG_SHA512, SHA512_DIGEST_SIZE},
+        {TPM_ALG_SM3_256, SM3_256_DIGEST_SIZE},
+        {TPM_ALG_NULL, 0},
+    };
+    const int N = sizeof(HASH_SIZES) / sizeof(HASH_SIZE_INFO);
+    UINT16 result;
+    int i;
+
+    result = 0;
+    for( i = 0; i < N; i++ )
+    {
+        if(HASH_SIZES[i].hash_alg == hash_alg)
+        {
+            result = HASH_SIZES[i].size;
+            break;
+        }
+    }
+    // If hash_alg was not included from the table, return value will be set to 0
+    return(result);
+}
