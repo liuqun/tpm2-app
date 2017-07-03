@@ -1,10 +1,9 @@
 # Makefile
 
-.PHONY: tests
-tests: test-asymmetric-encrypt-decrypt
+PROGRAMS += asymmetric-encrypt-decrypt
 
 .PHONY: all
-all: tests
+all: $(PROGRAMS)
 
 # PREFIX should be the same dir where TPM2.0-TSS libraries has been installed to
 PREFIX := /usr/local
@@ -27,7 +26,7 @@ COMPILE_c = $(COMPILE.c)
 COMPILE_cpp = $(COMPILE.cpp)
 
 # Build Rules
-test-asymmetric-encrypt-decrypt: test-main.o asymmetric-encrypt-decrypt.o
+%: %.int.o test-main.o
 	$(CXX) $(LD_FLAGS) -o $@ $^ $(LIBS)
 
 %.o: %.c %.h
