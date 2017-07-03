@@ -1,6 +1,10 @@
 # Makefile
 
 PROGRAMS += asymmetric-encrypt-decrypt
+PROGRAMS += start-auth-session
+PROGRAMS += get-random
+PROGRAMS += pcr-extension
+PROGRAMS += self-test
 
 .PHONY: all
 all: $(PROGRAMS)
