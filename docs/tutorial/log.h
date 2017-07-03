@@ -44,12 +44,14 @@ enum {
                 __LINE__, \
                 __FUNCTION__); \
         printf(__VA_ARGS__); \
+        printf("\n"); \
         fflush(stdout); \
     }
 #define print_log(...) \
     if (GLOBAL_LOG_LEVEL >= LOG) \
     { \
         printf(__VA_ARGS__); \
+        printf("\n"); \
         fflush(stdout); \
     }
 #define print_warning(...) \
@@ -62,6 +64,7 @@ enum {
                 __FUNCTION__); \
         fprintf(stderr, \
                 __VA_ARGS__); \
+        fprintf(stderr, "\n"); \
     }
 #define print_fail(...) \
     if (GLOBAL_LOG_LEVEL >= ONLY_ERRORS) \
@@ -73,6 +76,7 @@ enum {
                 __FUNCTION__); \
         fprintf(stderr, \
                 __VA_ARGS__); \
+        fprintf(stderr, "\n"); \
     }
 /* 上述宏定义可在大多数主流编译器下编译通过(只要编译器支持 __VA_ARGS__ 语法). GCC 编译器相关文档可以查询 http://gcc.gnu.org/onlinedocs/cpp/Variadic-Macros.html */
 #endif // LOG_H_
