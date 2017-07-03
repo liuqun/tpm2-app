@@ -9,6 +9,17 @@
 
 #include "test.h" // 导入 test_invoke() 函数原型
 
+#ifndef DEFAULT_RESMGR_TPM_PORT
+    /* @note This mircro and the legacy resourcemgr has been removed by upstream developer since 2017-05-09.
+     * @see https://github.com/01org/TPM2.0-TSS/commit/7966ef8916f79ed09eab966a58d773f413fbb67f#diff-9b5d40e51314bbf4fdfc0997a4b58838L41
+     */
+    #warning // DEFAULT_RESMGR_TPM_PORT was removed from <tcti_socket.h>!
+    #warning // You should either use tcti_tabrmd.h or tcti-tabrmd.h (which is a replacement to the legacy resourcemgr)
+    #warning // or directly connect to port 2321 of the simulator without a resourcemgr!
+    #warning // See https://github.com/01org/tpm2-abrmd
+    const unsigned DEFAULT_RESMGR_TPM_PORT=DEFAULT_SIMULATOR_TPM_PORT;
+#endif
+
 /* 自定义函数 */
 int DebugPrintf(printf_type type, const char *format, ...);
 int DebugPrintfCallback(void *data, printf_type type, const char *format, ...);
@@ -117,6 +128,10 @@ int main(int argc, char *argv[])
                 &abiVersion);
         if (rval == TSS2_RC_SUCCESS)
         {
+            /* 进入测试程序主体之前手动发送一个 Startup 命令 */
+            /* (因为有可能当前是跳过 resourcemgr 直接连接到 TPM Simulator 的 2321 端口) */
+            Tss2_Sys_Startup(pSysContext, TPM_SU_CLEAR);
+
             /* 最后进入测试程序主体 */
             test_invoke(pSysContext);
 
