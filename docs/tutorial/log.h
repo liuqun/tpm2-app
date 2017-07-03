@@ -28,11 +28,17 @@ enum {
     INFO=3, ///< 输出除了调试信息之外的大部分运行日志
     ONLY_WARNINGS_AND_ERRORS=2, ///< 输出警告信息或错误信息
     ONLY_ERRORS=1, ///< 只输出错误信息(不输出警告信息)
+    DISABLED=0, ///< 不打印任何日志信息
     OFF=0 ///< 不打印任何日志信息
 };
 
 // 默认printf日志信息的级别
-#define GLOBAL_LOG_LEVEL DEBUG
+// 注意: 只有在编译测试程序之前手动指定日志级别>=4才能开启全部printf调试信息
+//       如果手动指定日志级别==0, 则不打印下列调试信息
+#ifndef GLOBAL_LOG_LEVEL
+#define GLOBAL_LOG_LEVEL 99 // 默认的全局日志打印级别, 正整数
+                            // 数值越大表示输出的日志信息越多
+#endif
 
 // 以下这组宏定义改编自 [TPM2.0-TSS/test/integration/log.h](https://github.com/01org/TPM2.0-TSS/blob/master/test/integration/log.h)
 #include <stdio.h>
