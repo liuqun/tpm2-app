@@ -779,36 +779,7 @@ void SHA1HMACGenerationDemoProgramUsingPrivateHMACKey(const char *hostname, unsi
     // 测试开始, 首先建立与 TSS resource manager 连接
     framework.connectToResourceManager(hostname, port);
     ///////////////////////////////////////////////////////////////////////////
-    printf("准备步骤一: 调用 Hash 命令生成一条哈希摘要备用\n");
-    const char szMessage[] = "abc";
-    printf("SHA1 测试用例-1 strMessage: \"%s\"\n", szMessage);
-    const char *ExpectedDigest = "0xA9 0x99 0x3E 0x36 0x47 0x06 0x81 0x6A 0xBA 0x3E 0x25 0x71 0x78 0x50 0xC2 0x6C 0x9C 0xD0 0xD8 0x9D";
-    printf("预期应输出的结果为: %s\n", ExpectedDigest);
-    TPMCommands::Hash hash;
-    try
-    {
-        hash.configHashAlgorithmUsingSHA1();
-        hash.configInputData(szMessage, strlen(szMessage));
-        framework.sendCommand(hash);
-        framework.fetchResponse(hash);
-
-        printf("打印 SHA1 摘要结果如下:\n");
-        const TPM2B_DIGEST& hashDigest = hash.outHash();
-        printf("hashDigest.t.size=%d\n", hashDigest.t.size);
-        printf("hashDigest data: ");
-        for (size_t i=0; i<hashDigest.t.size; i++)
-        {
-            printf("0x%02X ", hashDigest.t.buffer[i]);
-        }
-        printf("\n");
-    }
-    catch (...)
-    {
-        fprintf(stderr, "Unknown Error\n");
-    }
-    printf("\n");
-    ///////////////////////////////////////////////////////////////////////////
-    printf("准备步骤二: 调用 CreatePrimary 命令创建一个存储密钥\n");
+    printf("步骤一(准备步骤): 调用 CreatePrimary 命令创建一个存储密钥\n");
     const char *primaryPassword = "abcd";
     const UINT16 primaryPasswordLen = strlen(primaryPassword);
     TPMCommands::CreatePrimary createprimary;
@@ -877,7 +848,7 @@ void SHA1HMACGenerationDemoProgramUsingPrivateHMACKey(const char *hostname, unsi
     }
     printf("\n");
     ///////////////////////////////////////////////////////////////////////////
-    printf("测试步骤三: 让 TPM 创建并加载一个对称密钥, 以便稍后用于计算 HMAC 值.\n");
+    printf("步骤二(准备步骤): 让 TPM 创建并加载一个对称密钥, 以便稍后用于计算 HMAC 值.\n");
     const char *ChildPassword = "child password";
     const UINT16 ChildPasswordLen = strlen("child password");
     TPMCommands::HMACKeyCreate create;
@@ -924,7 +895,7 @@ void SHA1HMACGenerationDemoProgramUsingPrivateHMACKey(const char *hostname, unsi
     }
     printf("\n");
     ///////////////////////////////////////////////////////////////////////////
-    printf("测试步骤四: 测试 HMAC 命令\n");
+    printf("步骤三: 测试 HMAC 命令\n");
     const char data[] = "Hi There"; // HMAC-SHA-1 测试数据, 来自 https://tools.ietf.org/html/rfc2202#section-3
     TPMCommands::HMAC hmac; // 单条 HMAC 命令, 可以处理不超过 1024 字节数据
     try /* 发送 HMAC 命令 */
