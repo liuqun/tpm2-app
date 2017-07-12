@@ -12,6 +12,11 @@ void HashingShortMessageWithin1024Bytes(const char *hostname="127.0.0.1", unsign
 void HashingLongMessageMoreThan1024Bytes(const char *hostname="127.0.0.1", unsigned int port=2323);
 void SigningAndSignatureVerification(const char *hostname="127.0.0.1", unsigned int port=2323);
 
+namespace HMAC {
+void RFC2202TestCasesForHMACSHA1(const char *hostname="127.0.0.1", unsigned int port=2323);
+void MyTestCaseForHMACSHA1UsingTPMProtectedHMACKey(const char *hostname="127.0.0.1", unsigned int port=2323);
+}// end of namespace HMAC
+
 }
 
 #endif//__cplusplus

@@ -73,10 +73,6 @@ public:
     void disconnect();
 };
 
-static void SHA1HMACGenerationDemoProgram(const char *hostname="127.0.0.1", unsigned int port=2323);
-static void SHA1HMACGenerationDemoProgramUsingPrivateHMACKey(const char *hostname="127.0.0.1", unsigned int port=2323);
-static void SHA256HMACGenerationDemoProgram(const char *hostname="127.0.0.1", unsigned int port=2323);
-
 int main(int argc, char *argv[])
 {
     int count;
@@ -653,7 +649,7 @@ void TestCase::SigningAndSignatureVerification(const char *hostname, unsigned in
     framework.disconnect();
 }
 
-void SHA1HMACGenerationDemoProgram(const char *hostname, unsigned int port)
+void TestCase::HMAC::RFC2202TestCasesForHMACSHA1(const char *hostname, unsigned int port)
 {
     // 测试开始, 首先建立与 TSS resource manager 连接
     MyAppFramework framework;
@@ -771,7 +767,7 @@ void SHA1HMACGenerationDemoProgram(const char *hostname, unsigned int port)
     framework.disconnect();
 }
 
-void SHA1HMACGenerationDemoProgramUsingPrivateHMACKey(const char *hostname, unsigned int port)
+void TestCase::HMAC::MyTestCaseForHMACSHA1UsingTPMProtectedHMACKey(const char *hostname, unsigned int port)
 {
     printf("函数名: %s()\n", __FUNCTION__);
     printf("本函数将演示如何在 TPM 的保护区中创建一个对称密钥并使用该密钥进行 HMAC 运算输出 HMAC 结果(即: 基于哈希摘要的消息鉴别码)\n");
