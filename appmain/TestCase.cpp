@@ -905,3 +905,278 @@ void TestCase::HMAC::MyTestCaseForHMACSHA1UsingTPMProtectedHMACKey(const char *h
     // 测试结束需要手动切断与 TSS resource manager 之间的连接
     framework.disconnect();
 }
+
+void TestCase::MyTestCaseForRSAEncryptionDecryptionUsingTPMProtectedRSAKey(const char *hostname, unsigned int port)
+{
+    // 测试开始, 首先建立与 TSS resource manager 连接
+    MyAppFramework framework;
+    framework.connectToResourceManager(hostname, (uint16_t) (port & 0xFFFF));
+    ///////////////////////////////////////////////////////////////////////////
+    printf("步骤1: 调用 CreatePrimary 命令, 生成一个主节点(Primary 节点)\n");
+    TPMCommands::CreatePrimary createprimary;
+    const char *primaryPassword = "abcd";
+    const UINT16 primaryPasswordLen = strlen(primaryPassword);
+    try
+    {
+        TPMT_PUBLIC publicArea;
+
+        publicArea.type = TPM_ALG_RSA;
+        publicArea.nameAlg = TPM_ALG_SHA1;
+        publicArea.objectAttributes.val = 0;
+        publicArea.objectAttributes.fixedTPM = 1;
+        publicArea.objectAttributes.fixedParent = 1;
+        publicArea.objectAttributes.restricted = 1;
+        publicArea.objectAttributes.userWithAuth = 1;
+        publicArea.objectAttributes.sensitiveDataOrigin = 1;
+        publicArea.objectAttributes.decrypt = 1;
+        publicArea.objectAttributes.sign = 0;
+        publicArea.authPolicy.t.size = 0;
+        publicArea.parameters.rsaDetail.symmetric.algorithm = TPM_ALG_AES;
+        publicArea.parameters.rsaDetail.symmetric.keyBits.aes = 128;
+        publicArea.parameters.rsaDetail.symmetric.mode.aes = TPM_ALG_ECB;
+        publicArea.parameters.rsaDetail.scheme.scheme = TPM_ALG_NULL;
+        publicArea.parameters.rsaDetail.keyBits = 2048;
+        publicArea.parameters.rsaDetail.exponent = 0;
+        publicArea.unique.rsa.t.size = 0;
+        if (TPM_ALG_RSA == publicArea.type)
+        {
+            printf("Key type: RSA.\n");
+            printf("Key size: %d bits.\n", publicArea.parameters.rsaDetail.keyBits);
+        }
+        createprimary.configPublicData(publicArea);
+
+        const TPMI_RH_HIERARCHY hierarchy = TPM_RH_OWNER;
+        if (TPM_RH_NULL == hierarchy)
+        {
+            printf("We will create a new key in TPM NULL-hierarchy.\n");
+        }
+        else if (TPM_RH_OWNER == hierarchy)
+        {
+            printf("We will create a new key in TPM Storage-hierarchy(TPM_RH_OWNER).\n");
+        }
+        createprimary.configAuthHierarchy(hierarchy);
+        createprimary.configAuthSession(TPM_RS_PW);
+        createprimary.configAuthPassword("", 0);
+        createprimary.configKeyNameAlg(TPM_ALG_SHA1); // 备注: 前面已经设置过一次 "publicArea.nameAlg = TPM_ALG_SHA1;" 重复设置应该没有问题
+        createprimary.configKeySensitiveData(primaryPassword, primaryPasswordLen, "", 0);
+        createprimary.configPublicData(publicArea);
+
+        framework.sendCommand(createprimary);
+        framework.fetchResponse(createprimary);
+
+        // 分析 CreatePrimary 命令创建的句柄
+        printf("New primary key created successfully! Handle=0x%8.8x\n", createprimary.outObjectHandle());
+
+        // 分析 CreatePrimary 命令创建的密钥节点名
+        const TPM2B_NAME& keyName = createprimary.outName();
+        printf("keyName.t.size=%d\n", keyName.t.size);
+        printf("keyName data: ");
+        for (size_t i=0; i<keyName.t.size; i++)
+        {
+            printf("0x%02X,", keyName.t.name[i]);
+        }
+        printf("\n");
+    }
+    catch (...)
+    {
+        fprintf(stderr, "Unknown Error\n");
+    }
+    printf("\n");
+    ///////////////////////////////////////////////////////////////////////////
+    printf("步骤2: 组合调用 Create 和 Load 命令, 在主节点下加载密钥子节点\n");
+    TPMCommands::Create create;
+    TPMCommands::Load load;
+    const char *ChildPassword = "child password";
+    const UINT16 ChildPasswordLen = strlen("child password");
+    try
+    {
+        printf("We will create a child key node under parent(0x%08X).\n",
+                createprimary.outObjectHandle());
+        create.configAuthParent(createprimary.outObjectHandle());
+        create.configAuthSession(TPM_RS_PW);
+        create.configAuthPassword(primaryPassword, primaryPasswordLen);
+        create.configKeySensitiveData(ChildPassword, ChildPasswordLen, "", 0);
+        TPM2B_PUBLIC inPublic;
+        {
+            inPublic.t.publicArea.type = TPM_ALG_RSA;
+            inPublic.t.publicArea.nameAlg = TPM_ALG_SHA1;
+            inPublic.t.publicArea.objectAttributes.val = 0;
+            inPublic.t.publicArea.objectAttributes.fixedTPM = 1;
+            inPublic.t.publicArea.objectAttributes.fixedParent = 1;
+            inPublic.t.publicArea.objectAttributes.restricted = 0; // 必须清除 restricted 标志位. 原因未知, 需要进一步研究
+            inPublic.t.publicArea.objectAttributes.userWithAuth = 1;
+            inPublic.t.publicArea.objectAttributes.sensitiveDataOrigin = 1;
+            inPublic.t.publicArea.objectAttributes.decrypt = 1; // 允许 RSA 私钥用于解密(decrypt)运算
+            inPublic.t.publicArea.objectAttributes.sign = 0; // 不允许该 RSA 私钥用于签名(因RSA数字签名和RSA加解密对应的Padding Scheme不同)
+            inPublic.t.publicArea.authPolicy.t.size = 0;
+            inPublic.t.publicArea.parameters.rsaDetail.symmetric.algorithm = TPM_ALG_NULL;
+            // 下列两个变量用于设置 RSA 加解密密钥使用 OAEP 方案填充数据块:
+            // inPublic.t.publicArea.parameters.rsaDetail.scheme.scheme
+            // 和
+            // inPublic.t.publicArea.parameters.rsaDetail.scheme.details.oaep.hashAlg
+            // 如果改为 rsaDetail.scheme.scheme = TPM_ALG_NULL 则暂不指定数据块填充方案
+            inPublic.t.publicArea.parameters.rsaDetail.scheme.scheme = TPM_ALG_OAEP; // 推荐使用 OAEP 填充方案
+            inPublic.t.publicArea.parameters.rsaDetail.scheme.details.oaep.hashAlg = TPM_ALG_SHA1; // 其他备选值包括 TPM_ALG_SHA256 等. 注: oaep.hashAlg 不允许设定为 TPM_ALG_NULL
+            inPublic.t.publicArea.parameters.rsaDetail.keyBits = 1024; // 密钥位数, 可选取值 1024/2048. 程序运行测试 TPM 模块确认是否支持 4096 位 RSA 密钥, 发现不支持, 应答桢返回错误码0x02C4=(RC_FMT1 | TPM_RC_2 | TPM_RC_P | TPM_RC_VALUE): parameter 2 value is out of range
+            inPublic.t.publicArea.parameters.rsaDetail.exponent = 0;
+            inPublic.t.publicArea.unique.rsa.t.size = 0;
+            if (TPM_ALG_RSA == inPublic.t.publicArea.type)
+            {
+                printf("Key type: RSA.\n");
+                printf("Key size: %d bits.\n", inPublic.t.publicArea.parameters.rsaDetail.keyBits);
+            }
+        }
+        create.configPublicData(inPublic);
+
+        framework.sendCommand(create);
+        framework.fetchResponse(create);
+        printf("Child key node has been created successfully.\n");
+
+        load.configAuthParent(createprimary.outObjectHandle());
+        load.configAuthSession(TPM_RS_PW);
+        load.configAuthPassword(primaryPassword, primaryPasswordLen);
+        load.configPrivateData(create.outPrivate());
+        load.configPublicData(create.outPublic());
+
+        framework.sendCommand(load);
+        framework.fetchResponse(load);
+
+        const TPM2B_NAME& keyName = load.outName();
+        printf("Load 命令取回的结果是: keyName.t.size=%d\n", keyName.t.size);
+        printf("keyName data: ");
+        for (size_t i=0; i<keyName.t.size; i++)
+        {
+            printf(" 0x%02X,", keyName.t.name[i]);
+        }
+        printf("\n");
+        printf("Child key node has been loaded successfully. Child handle=0x%08X\n", load.outObjectHandle());
+    }
+    catch (...)
+    {
+        fprintf(stderr, "Unknown Error\n");
+    }
+    printf("\n");
+    ///////////////////////////////////////////////////////////////////////////
+    printf("步骤3: 测试 Encrypt 和 Decrypt 命令\n");
+    TPMCommands::Encrypt encrypt;
+    TPMCommands::Decrypt decrypt;
+    TPM_HANDLE pubKeyHandle; ///< RSA 公钥
+    pubKeyHandle = load.outObjectHandle();
+    TPM_HANDLE privkeyHandle; ///< RSA 私钥
+    privkeyHandle = load.outObjectHandle();
+    const UINT16 RSAKeyBits = create.outPublic().t.publicArea.parameters.rsaDetail.keyBits;
+    try
+    {
+        const char plaintext[] = {'A', 'B', 'C', '\0', 'a', 'b', 'c', '\r', '\n', '\a'};
+        UINT16 length = sizeof(plaintext); // 这样无论末尾有没有'\0'都可以进行 RSA 加密
+        printf("RSA 加密前: plaintext={");
+        for (UINT16 i=0; i<length; i++)
+        {
+            if (isprint(plaintext[i]))
+            {
+                printf("'%c',", plaintext[i]);
+            } else
+            {
+                printf("'\\0x%02x',", plaintext[i]);
+            }
+        }
+        printf("}\n");
+
+        printf("设置数据, 公钥的TPM句柄值以及加解密填充方案\n");
+        encrypt.config(plaintext, length, RSAKeyBits, pubKeyHandle);
+
+        printf("发送命令 RSA_Encrypt\n");
+        framework.sendCommand(encrypt);
+        framework.fetchResponse(encrypt);
+        printf("RSA 加密命令执行完毕\n");
+
+        // 分析 Encrypt 命令输出的密文
+        const TPM2B& ciphertext = encrypt.out();
+        printf("RSA 加密后密文为:\n");
+        printf("---- BEGIN ----\n");
+        for (UINT16 i=0; i<ciphertext.size; i++)
+        {
+            printf("%02X", ciphertext.buffer[i]);
+            if ((i & 0x1F) == 0x1F)
+            {
+                printf("\n");
+            }
+        }
+        printf("----- END -----\n");
+
+        printf("设置数据, 解密私钥的TPM句柄值, 加解密填充方案\n");
+        decrypt.config(ciphertext.buffer, ciphertext.size, RSAKeyBits, privkeyHandle);
+        printf("提供 RSA 私钥访问授权值以及指定授权会话\n");
+        decrypt.configAuthPassword(ChildPassword, ChildPasswordLen);
+        decrypt.configAuthSession(TPM_RS_PW);
+
+        printf("发送命令 RSA_Decrypt\n");
+        framework.sendCommand(decrypt);
+        framework.fetchResponse(decrypt);
+        printf("RSA 解密命令执行完毕\n");
+
+        // 分析 Decrypt 命令输出的明文
+        const TPM2B& result = decrypt.out();
+        printf("RSA 解密后: result={");
+
+        for (UINT16 i=0; i<result.size; i++)
+        {
+            if (isprint(result.buffer[i]))
+            {
+                printf("'%c',", result.buffer[i]);
+            } else
+            {
+                printf("'\\0x%02x',", plaintext[i]);
+            }
+        }
+        printf("}\n");
+    }
+    catch (...)
+    {
+        fprintf(stderr, "Unknown Error\n");
+    }
+    printf("\n");
+
+    ///////////////////////////////////////////////////////////////////////////
+    printf("最后一步: 清理测试现场, 调用 Flush 命令清除密钥节点\n");
+    TPMCommands::FlushLoadedKeyNode flush1;
+    TPMCommands::FlushLoadedKeyNode flush2;
+    try
+    {
+        flush1.configKeyNodeToFlushAway(createprimary.outObjectHandle());
+
+        printf("发送命令, 让 TPM 删除 CreatePrimary 命令创建的主节点\n");
+        framework.sendCommand(flush1);
+        framework.fetchResponse(flush1);
+        printf("flush1 成功删除了主节点\n");
+    }
+    catch (std::exception& e)
+    {
+        fprintf(stderr, "flush1: An error happened: %s\n", e.what());
+    }
+    catch (...)
+    {
+        fprintf(stderr, "Unknown error happened in TPM command FlushLoadedKeyNode\n");
+    }
+    try
+    {
+        flush2.configKeyNodeToFlushAway(load.outObjectHandle());
+
+        printf("发送命令, 让 TPM 删除 Create/Load 命令输出的子节点\n");
+        framework.sendCommand(flush2);
+        framework.fetchResponse(flush2);
+        printf("flush2 成功删除了子节点\n");
+    }
+    catch (std::exception& e)
+    {
+        fprintf(stderr, "flush2: An error happened: %s\n", e.what());
+    }
+    catch (...)
+    {
+        fprintf(stderr, "Unknown error happened in TPM command FlushLoadedKeyNode\n");
+    }
+    printf("\n");
+    ///////////////////////////////////////////////////////////////////////////
+    // 测试结束需要手动切断与 TSS resource manager 之间的连接
+    framework.disconnect();
+}

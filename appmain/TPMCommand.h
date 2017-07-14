@@ -48,6 +48,31 @@ extern const TPMT_SIG_SCHEME SHA1RSASSA; ///< 选择用 RSASSA 密钥对 SHA1 �
 extern const TPMT_SIG_SCHEME SHA256RSASSA; ///< 选择用 RSASSA 密钥对 SHA256 哈希摘要进行签名
 }
 
+/// RSAES(RSA Encryption Schemes): the padding schemes used in RSA encryption and decryption
+namespace RSAES
+/// @brief RSA 非对称加密中使用的数据块填充方案
+/// @note 推荐使用安全性较好的 OAEP(Optimal asymmetric encryption padding, 最优非对称加密填充)方案, 具体定义参考 IETF 资料 [RFC3447 第 7.1-7.2 小节](https://tools.ietf.org/html/rfc3447#section-7)
+{
+typedef struct _PaddingScheme *PaddingScheme;
+
+/// 使用 OAEP 填充方案, hashAlg=SHA1
+extern const PaddingScheme USING_PADDING_SCHEME_OAEP_SHA1;
+
+/// 使用 OAEP 填充方案, hashAlg=SHA256
+extern const PaddingScheme USING_PADDING_SCHEME_OAEP_SHA256;
+
+/// v1.5 旧版填充方案, 安全性弱, 不推荐使用, 仅可用于向前兼容的场合
+extern const PaddingScheme USING_PADDING_SCHEME_PKCS1_V1_5;
+
+/// 不具体指定 padding 方案的情况下, 将自动套用 TPM 创建 RSA 密钥时指定的 padding scheme
+/// 如果创建 RSA 密钥时也没有定义使用何种填充方案, 则最终将不使用任何 padding scheme
+extern const PaddingScheme USING_PADDING_SCHEME_INHERITED_FROM_RSA_KEY;
+
+/// 不指定用于填充数据块的标签
+extern const char *NO_PADDING_LABEL;
+
+}
+
 /// @namespace TPMCommands
 /// @brief 盛放各种 TPM 命令对象的命名空间.
 namespace TPMCommands
@@ -764,6 +789,117 @@ public:
      */
     const TPM2B_NAME& outQualifiedName();
     /** 擦除所有临时缓存的输出数据, 前两个成员函数的返回值也会被清零 */
+    void eraseCachedOutputData();
+};
+
+/// 使用 RSA 公钥进行数据块加密
+class Encrypt: public TPMCommand
+/// @details
+/// 使用 TPM 中的 RSA 公钥对明文数据块进行加密
+/// ```
+/// // 用法示意(伪代码):
+/// #include <cstdio>
+/// #include <stdexception>
+/// #include "TPMCommand.h"
+/// TPMCommands::Encrypt encrypt;
+/// TPM_HANDLE pubKeyHandle=0x80000001; // 假定之前已经通过调用 Load/LoadExternal 等命令准备好一个可用的公钥句柄
+/// const char *plaintext;
+/// UINT16 length;
+/// try
+/// {
+///     plaintext = "abc";
+///     length = strlen(plaintext);
+///     encrypt.config(plaintext, length, 2048, pubKeyHandle);
+///     encrypt.buildCmdPacket(sysContext);
+///     Tss2_Sys_Execute(sysContext);
+///     encrypt.unpackRspPacket(sysContext);
+///     const TPM2B& result = encrypt.out();
+/// }
+/// catch (std::exception& e)
+/// {
+///     printf(stderr, "Some Error Happened: %s\n", e.what());
+/// }
+/// ```
+/// @note 被加密的数据块长度不能超过相应的 OAEP 或 RSAES 填充方案对数据块的长度限制.
+{
+public:
+    Encrypt();
+    virtual void buildCmdPacket(TSS2_SYS_CONTEXT *ctx);
+    virtual void unpackRspPacket(TSS2_SYS_CONTEXT *ctx);
+    virtual ~Encrypt();
+    /**
+     * 输入要加密的数据, 指定 RSA 公钥, 并指定 RSAES 填充方案和可选的填充标签
+     *
+     * @note
+     * 当采用OAEP方案进行填充处理时, 由密钥长度kLen和所选哈希算法的摘要长度dLen决定最大可处理字节数 n=kLen-2*dLen-2;
+     * 当采用PKCS#1-v1.5方案进行填充处理时, 最大字节数 n=kLen-11 与哈希算法无关. 参见 [RFC3447文档第7.1-7.2小节](https://tools.ietf.org/html/rfc3447#section-7)
+     */
+    void config(
+            const void *sensitiveMessage, ///< 一个指向待加密数据的指针. 可以是二进制数据也可以是纯文本数据.
+            UINT16 length, ///< 数据长度(单位: 字节), 取值范围由RSA公钥长度和padding-scheme(填充方案)共同决定.
+            UINT16 keyBits, ///< RSA 密钥的位数(单位: bit). 仅用于检查最大可加密的数据包尺寸, 当数据长度超过密钥长度字节数时, 多余部分默认情况下应被舍弃, 否则之后将会收到TPM应答桢报错.
+            TPM_HANDLE pubKeyHandle, ///< 指定用于加密数据的 RSA 公钥句柄.
+            const RSAES::PaddingScheme paddingScheme=RSAES::USING_PADDING_SCHEME_INHERITED_FROM_RSA_KEY, ///< 填充方案. 取值: 可以不指定填充方案, 默认直接使用之前定义的密钥的填充方案.
+            const char *szPaddingLabel=RSAES::NO_PADDING_LABEL ///< 预留Label标签参数, 只有某些高级填充方案才用得到
+            );
+    /**
+     * 擦除已缓存的输入数据
+     */
+    void eraseCachedInputData();
+
+    /**
+     * 按 TPM2B  格式输出加密后结果, 即密文数据
+     */
+    const TPM2B& out();
+};
+
+/// 使用 RSA 私钥进行解密
+class Decrypt: public TPMCommand
+/// @details
+/// 操作 TPM 用指定的 RSA 私钥对密文数据进行解密, 密文长度不能超过相应的 OAEP 或 RSAES 填充方案所规定的长度限制
+{
+public:
+    Decrypt();
+    virtual ~Decrypt();
+    virtual void buildCmdPacket(TSS2_SYS_CONTEXT *ctx);
+    virtual void unpackRspPacket(TSS2_SYS_CONTEXT *ctx);
+    /**
+     * 指定授权方式会话
+     */
+    virtual void configAuthSession(
+            TPMI_SH_AUTH_SESSION authSessionHandle=TPM_RS_PW ///< 会话句柄, 可选取值包括: 明文密码授权会话句柄 TPM_RS_PW, 其他 HMAC/Policy 会话句柄
+            );
+    /**
+     * 指定授指定密码授权会话使用的密码权方式会话
+     */
+    virtual void configAuthPassword(
+            const void *password, ///< 句柄授权数据
+            UINT16 length ///< 授权数据长度
+            );
+    /**
+     * 擦除为访问 RSA 私钥而临时缓存的密码
+     *
+     * @details 程序退出前析构函数将自动调用本函数, 擦除 C++ 对象运行时内存中残留的密码数据
+     */
+    virtual void eraseCachedAuthPassword();
+    /**
+     * 输入密文数据, 同时指定用于解密数据的私钥, 以及 RSA 加解密填充方案等详细参数
+     */
+    void config(
+            const void *encryptedData, ///< 输入密文书籍
+            UINT16 dataLen, ///< 密文数据的长度
+            UINT16 keyBits, ///< RSA 密钥的位数(单位: bit). 仅用于检查数据包的最大尺寸, 当数据包长度与密钥长度字节数不相等时, 多余部分默认应被舍弃, 短缺的高位应补0, 否则之后将会收到TPM应答桢报错.
+            TPM_HANDLE privKeyHandle, ///< 指定用于解密数据的 RSA 私钥句柄.
+            const RSAES::PaddingScheme paddingScheme=RSAES::USING_PADDING_SCHEME_INHERITED_FROM_RSA_KEY, ///< 填充方案. 取值: 可以不指定填充方案, 默认直接使用之前定义的密钥的填充方案.
+            const char *szPaddingLabel=RSAES::NO_PADDING_LABEL ///< 预留Label标签参数, 只有某些高级填充方案才用得到
+            );
+    /** 输出 RSA 解密结果 */
+    const TPM2B& out();
+    /**
+     * 擦除临时缓存解密数据
+     *
+     * @details 程序退出前析构函数将自动调用本函数, 擦除内存中残留的解密后的明文的副本
+     */
     void eraseCachedOutputData();
 };
 
