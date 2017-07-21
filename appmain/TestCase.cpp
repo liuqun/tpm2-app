@@ -484,12 +484,13 @@ void TestCase::SigningAndSignatureVerification(const char *hostname, unsigned in
         printf("hashAlg=0x%04X (备注: TPM_ALG_SHA1=0x%04X,  TPM_ALG_SHA256=0x%04X)\n", signature.signature.any.hashAlg, TPM_ALG_SHA1, TPM_ALG_SHA256);
         if (signature.sigAlg == TPM_ALG_RSASSA)
         {
-            const TPM2B sig = signature.signature.rsassa.sig.b;
-            printf("数字签名 size=%d\n", sig.size);
+            const BYTE *buffer = signature.signature.rsassa.sig.b.buffer;
+            const UINT16 size =  signature.signature.rsassa.sig.b.size;
+            printf("数字签名 size=%d\n", size);
             printf("---- BEGIN ----\n");
-            for (UINT16 i = 0; i < sig.size; i++)
+            for (UINT16 i = 0; i < size; i++)
             {
-                printf("%02X", sig.buffer[i]);
+                printf("%02X", buffer[i]);
                 if ((i & 0x1F) == 0x1F)
                 {
                     printf("\n");
