@@ -1149,7 +1149,14 @@ void TestCase::MyTestCaseForRSAEncryptionDecryptionUsingTPMProtectedRSAKey(const
         printf("RSA 加密命令执行完毕\n");
 
         // 分析 Encrypt 命令输出的密文
-        const TPM2B& ciphertext = encrypt.out();
+        struct {
+            unsigned int size;
+            const unsigned char *buffer;
+        } ciphertext;
+
+        ciphertext.size = encrypt.outDataLength();
+        ciphertext.buffer = encrypt.outDataBuffer();
+
         printf("RSA 加密后密文为:\n");
         printf("---- BEGIN ----\n");
         for (UINT16 i=0; i<ciphertext.size; i++)
@@ -1174,7 +1181,14 @@ void TestCase::MyTestCaseForRSAEncryptionDecryptionUsingTPMProtectedRSAKey(const
         printf("RSA 解密命令执行完毕\n");
 
         // 分析 Decrypt 命令输出的明文
-        const TPM2B& result = decrypt.out();
+        struct {
+            unsigned int size;
+            const unsigned char *buffer;
+        } result;
+
+        result.size = decrypt.outDataLength();
+        result.buffer = decrypt.outDataBuffer();
+
         printf("RSA 解密后: result={");
 
         for (UINT16 i=0; i<result.size; i++)

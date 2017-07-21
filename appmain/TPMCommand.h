@@ -845,7 +845,8 @@ class Encrypt: public TPMCommand
 ///     encrypt.buildCmdPacket(sysContext);
 ///     Tss2_Sys_Execute(sysContext);
 ///     encrypt.unpackRspPacket(sysContext);
-///     const TPM2B& result = encrypt.out();
+///     UINT16 resultLength = encrypt.outDataLength();
+///     const BYTE *resultBuffer = encrypt.outDataBuffer();
 /// }
 /// catch (std::exception& e)
 /// {
@@ -880,9 +881,17 @@ public:
     void eraseCachedInputData();
 
     /**
-     * 按 TPM2B  格式输出加密后结果, 即密文数据
+     * 输出加密后结果的长度(即密文数据长度)
+     *
+     * @return 密文数据长度
      */
-    const TPM2B& out();
+    UINT16 outDataLength();
+    /**
+     * 输出 RSA 加密结果的数据缓冲区
+     *
+     * @return 密文数据指针. 该函数返回的指针总是指向成员变量的特定区域, 永远不会返回NULL.
+     */
+    const BYTE *outDataBuffer();
 };
 
 /// 使用 RSA 私钥进行解密
@@ -925,8 +934,18 @@ public:
             const RSAES::PaddingScheme paddingScheme=RSAES::USING_PADDING_SCHEME_INHERITED_FROM_RSA_KEY, ///< 填充方案. 取值: 可以不指定填充方案, 默认直接使用之前定义的密钥的填充方案.
             const char *szPaddingLabel=RSAES::NO_PADDING_LABEL ///< 预留Label标签参数, 只有某些高级填充方案才用得到
             );
-    /** 输出 RSA 解密结果 */
-    const TPM2B& out();
+    /**
+     * 输出 RSA 解密结果的长度
+     *
+     * @return 解密后数据的长度
+     */
+    UINT16 outDataLength();
+    /**
+     * 输出 RSA 解密结果的数据缓冲区
+     *
+     * @return 一个指向解密后的明文数据的指针. 该函数返回的指针总是指向成员变量的特定区域, 永远不会返回NULL.
+     */
+    const BYTE *outDataBuffer();
     /**
      * 擦除临时缓存解密数据
      *
@@ -1171,8 +1190,6 @@ namespace NV
         virtual ~Read();
         virtual void buildCmdPacket(TSS2_SYS_CONTEXT *ctx);
         virtual void unpackRspPacket(TSS2_SYS_CONTEXT *ctx);
-        /** 输出读取 NV 的最终结果 */
-        const TPM2B& result();
         /**
          * 按 TPM2B_MAX_NV_BUFFER 格式直接输出 NV 读取结果
          * @see MAX_NV_BUFFER_SIZE / TPM2B_MAX_NV_BUFFER

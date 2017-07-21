@@ -163,10 +163,16 @@ void Encrypt::unpackRspPacket(TSS2_SYS_CONTEXT *ctx) {
     // 这里就不需要额外调用父类的成员函数 TPMCommand::unpackRspPacket()
 }
 
-// 按 TPM2B 格式输出加密结果
-// -------------------------
-const TPM2B& Encrypt::out() {
-    return m_out->data.b;
+// 输出 RSA 解密结果的长度
+// -----------------------
+UINT16 Encrypt::outDataLength() {
+    return(m_out->data.b.size);
+}
+
+// 输出 RSA 解密结果的数据缓冲区
+// -----------------------------
+const BYTE *Encrypt::outDataBuffer() {
+    return (m_out->data.b.buffer);
 }
 
 // 参数设置
@@ -383,10 +389,16 @@ void Decrypt::unpackRspPacket(TSS2_SYS_CONTEXT *ctx) {
     Tss2_Sys_RSA_Decrypt_Complete(ctx, &(m_out->data)); // NOTE: 此处应检查函数返回值
 }
 
-// 输出 RSA 解密结果
-// -----------------
-const TPM2B& Decrypt::out() {
-    return(m_out->data.b);
+// 输出 RSA 解密结果的长度
+// -----------------------
+UINT16 Decrypt::outDataLength() {
+    return(m_out->data.b.size);
+}
+
+// 输出 RSA 解密结果的数据缓冲区
+// -----------------------------
+const BYTE *Decrypt::outDataBuffer() {
+    return (m_out->data.b.buffer);
 }
 
 // 擦除已缓存的输出结果
