@@ -461,6 +461,10 @@ void TestCase::SigningAndSignatureVerification(const char *hostname, unsigned in
     printf("\n");
     ///////////////////////////////////////////////////////////////////////////
     printf("步骤四: 测试 Sign 命令\n");
+    printf("这里将重复2轮测试检查使用 RSASSA-PKCS#1_v1.5 签名方案时的签名输出值.\n");
+    printf("预期2轮输出应该完全相同\n");
+    printf("(该方案主要用于向前兼容部分历史遗留的旧系统, 特点是对同一输入进行若干次 RSA 签名每次输出都将完全相同). 方案代码TPM_ALG_RSASSA=0x0014\n");
+    printf("步骤 4.1: 实验组\n");
     TPMCommands::Sign sign;
     try
     {
@@ -469,7 +473,7 @@ void TestCase::SigningAndSignatureVerification(const char *hostname, unsigned in
 
         printf("digest.t.size=%d\n", digest.t.size);
         sign.configDigestToBeSigned(digest.t.buffer, digest.t.size);
-        sign.configScheme(DigitalSignatureSchemes::SHA256RSASSA);
+        sign.configScheme(DigitalSignatureSchemes::RSASSA_PKCS1_V1_5_SHA256);
         sign.configValidationTicket(ticket);
         sign.configSigningKey(load.outObjectHandle());
         sign.configAuthPassword(ChildPassword, ChildPasswordLen);
@@ -497,6 +501,44 @@ void TestCase::SigningAndSignatureVerification(const char *hostname, unsigned in
                 }
             }
             printf("----- END -----\n");
+        }
+
+        printf("\n");
+        printf("步骤 4.2: 对照组\n");
+        printf("重复进行数字签名, 作为对照组. 检查 RSASSA_PKCS#1 v1.5 方案对同一输入签名两次, 输出的两个数字签名值是否相同\n");
+        printf("预期结果: 两次输出的数字签名值应该完全相同\n");
+        TPMCommands::Sign sign2;
+        {
+            sign2.configDigestToBeSigned(digest.t.buffer, digest.t.size);
+            sign2.configValidationTicket(ticket);
+            sign2.configScheme(DigitalSignatureSchemes::RSASSA_PKCS1_V1_5_SHA256);
+            sign2.configSigningKey(load.outObjectHandle());
+            sign2.configAuthPassword(ChildPassword, ChildPasswordLen);
+            sign2.configAuthSession(TPM_RS_PW);
+
+            framework.sendCommand(sign2);
+            framework.fetchResponse(sign2);
+
+            // 打印第二条命令输出的数字签名
+            const TPMT_SIGNATURE& out2 = sign2.outSignature();
+            printf("sigAlg=0x%04X (备注: TPM_ALG_RSASSA=0x%04X)\n", out2.sigAlg, TPM_ALG_RSASSA);
+            printf("hashAlg=0x%04X (备注: TPM_ALG_SHA1=0x%04X,  TPM_ALG_SHA256=0x%04X)\n", out2.signature.any.hashAlg, TPM_ALG_SHA1, TPM_ALG_SHA256);
+            if (out2.sigAlg == TPM_ALG_RSASSA)
+            {
+                const BYTE *buffer = out2.signature.rsassa.sig.b.buffer;
+                const UINT16 size =  out2.signature.rsassa.sig.b.size;
+                printf("数字签名 size=%d\n", size);
+                printf("---- BEGIN ----\n");
+                for (UINT16 i = 0; i < size; i++)
+                {
+                    printf("%02X", buffer[i]);
+                    if ((i & 0x1F) == 0x1F)
+                    {
+                        printf("\n");
+                    }
+                }
+                printf("----- END -----\n");
+            }
         }
     }
     catch (...)
