@@ -35,6 +35,9 @@ libplugin.a: ALWAYS_REBUILD
 main.o: main.cpp TPMCommand.h TestCase.h
 	$(COMPILE_cpp) -o $@ $<
 
+TestCase.o: TestCase.cpp TestCase.h TPMCommand.h
+	$(COMPILE_cpp) -o $@ $<
+
 main: main.o TestCase.o libplugin.a
 	$(CXX) $(LD_FLAGS) -o $@ $^ $(LIBS)
 
