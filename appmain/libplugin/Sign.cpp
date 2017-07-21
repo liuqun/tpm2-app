@@ -5,6 +5,62 @@
 #include <sapi/tpm20.h>
 #include "TPMCommand.h"
 using namespace TPMCommands;
+using DigitalSignatureSchemes::_PaddingScheme;
+
+/// @struct _PaddingScheme
+///
+/// @note _PaddingScheme 被定义为内部私有结构体(此处以class形式实现). @see TPMT_SIG_SCHEME
+/// @note PaddingScheme 被定义为指向 _PaddingScheme 结构体的指针, 对用户隐藏内部的数据结构.
+class _PaddingScheme: public TPMT_SIG_SCHEME { // 直接继承结构体 TPMT_SIG_SCHEME 中的 scheme 和 details 这两个成员字段
+public:
+    /**
+     * 默认构造函数, 给scheme/details两个字段分别设置有效的初始值. 这两个字段继承自 TPMT_SIG_SCHEME 结构体
+     */
+    _PaddingScheme() {
+        scheme = TPM_ALG_NULL;
+        memset(&details, 0x00, sizeof(details));
+    }
+};
+
+// 可能需要补充某些不常用的数字签名算法编号宏定义, 以免tpm20.h中未开启个别宏定义时无法编译含有这些宏定义的代码:
+#ifndef TPM_ALG_HMAC
+#define TPM_ALG_HMAC 0x0005
+#endif
+#ifndef TPM_ALG_RSAPSS
+#define TPM_ALG_RSAPSS 0x0016
+#endif
+#ifndef TPM_ALG_RSASSA
+#define TPM_ALG_RSASSA 0x0014
+#endif
+#ifndef TPM_ALG_ECDAA
+#define TPM_ALG_ECDAA 0x001A
+#endif
+#ifndef TPM_ALG_ECDSA
+#define TPM_ALG_ECDSA 0x0018
+#endif
+#ifndef TPM_ALG_SM2
+#define TPM_ALG_SM2 0x001B
+#endif
+#ifndef TPM_ALG_ECSCHNORR
+#define TPM_ALG_ECSCHNORR 0x001C
+#endif
+
+// 如果tpm20.h中没有开启某个哈希算法编码的宏定义, 则补充之, 以免未开启个别宏定义时无法编译含有这些宏定义的代码:
+#ifndef TPM_ALG_SHA1
+#define TPM_ALG_SHA1 0x0004
+#endif
+#ifndef TPM_ALG_SHA256
+#define TPM_ALG_SHA256 0x000B
+#endif
+#ifndef TPM_ALG_SHA384
+#define TPM_ALG_SHA384 0x000C
+#endif
+#ifndef TPM_ALG_SHA512
+#define TPM_ALG_SHA512 0x000D
+#endif
+#ifndef TPM_ALG_SM3_256
+#define TPM_ALG_SM3_256 0x0012
+#endif
 
 // ============================================================================
 // 自定义输入输出参数格式
@@ -140,11 +196,11 @@ const TPMT_SIGNATURE& Sign::outSignature() {
 // ============================================================================
 // 配置 Scheme
 // ----------------------------------------------------------------------------
-void Sign::configScheme(const TPMT_SIG_SCHEME& inScheme ///< 头文件 TPMCommand.h 中指定了一个默认值=TPMCommands::Sign::DefaultSigningScheme
+void Sign::configScheme(const DigitalSignatureSchemes::PaddingScheme inScheme ///< 头文件 TPMCommand.h 中指定了一个默认值=TPMCommands::Sign::DefaultSigningScheme
             ) {
-    switch(inScheme.scheme) {
+    switch(inScheme->scheme) {
         case TPM_ALG_ECDAA:
-            m_in->inScheme.details.ecdaa.count = inScheme.details.ecdaa.count; ///< @note 只有 TPMS_SCHEME_ECDAA 结构体额外附加一个 2 字节的 count 字段, 故进行单独处理
+            m_in->inScheme.details.ecdaa.count = inScheme->details.ecdaa.count; ///< @note 只有 TPMS_SCHEME_ECDAA 结构体额外附加一个 2 字节的 count 字段, 故进行单独处理
             /* [[fallthrough]]; */
         case TPM_ALG_RSASSA:
         case TPM_ALG_RSAPSS:
@@ -152,38 +208,74 @@ void Sign::configScheme(const TPMT_SIG_SCHEME& inScheme ///< 头文件 TPMComman
         case TPM_ALG_SM2:
         case TPM_ALG_ECSCHNORR:
         case TPM_ALG_HMAC:
-            m_in->inScheme.details.any.hashAlg = inScheme.details.any.hashAlg;
+            m_in->inScheme.details.any.hashAlg = inScheme->details.any.hashAlg;
             break;
         default: // 对其他厂家自定义格式(或未知格式)的 Scheme 联合体, 我们不建议进行赋值操作.
             // 因此此处手动拷贝整个 details 数据块.
             TPMU_SIG_SCHEME *p;
             p = &(m_in->inScheme.details);
-            memcpy(p, &(inScheme.details), sizeof(m_in->inScheme.details));
+            memcpy(p, &(inScheme->details), sizeof(m_in->inScheme.details));
             break;
     }
-    m_in->inScheme.scheme = inScheme.scheme;
+    m_in->inScheme.scheme = inScheme->scheme;
 }
 
 // ============================================================================
-// 常用的数字签名 schemes 选项
+// 一些常用的数字签名 padding schemes 方案
 // ----------------------------------------------------------------------------
+namespace DigitalSignatureSchemes {
+    // RSA Probabilistic Signature Scheme
+    // ------------------------------------------------------------------------
+    // RSA-PSS 是进行 RSA 数字签名前使用的一种数据编码填充方案.
+    // 参见 RSA 算法描述文档(RFC 3447)章节 8.1 中的定义
+    // 网址连接: https://tools.ietf.org/html/rfc3447
+    class RSAPSS_PaddingScheme: public _PaddingScheme {
+    public:
+        RSAPSS_PaddingScheme() {
+            scheme = TPM_ALG_RSAPSS;
+            details.rsapss.hashAlg = TPM_ALG_NULL;
+        }
+        RSAPSS_PaddingScheme(TPMI_ALG_HASH hashAlg) {
+            scheme = TPM_ALG_RSAPSS;
+            details.rsapss.hashAlg = hashAlg;
+        }
+    };
+    static class RSAPSS_PaddingScheme RSAPSS_PaddingSchemeUsingSHA1(TPM_ALG_SHA1);
+    static class RSAPSS_PaddingScheme RSAPSS_PaddingSchemeUsingSHA256(TPM_ALG_SHA256);
+    static class RSAPSS_PaddingScheme RSAPSS_PaddingSchemeUsingSHA384(TPM_ALG_SHA384);
+    static class RSAPSS_PaddingScheme RSAPSS_PaddingSchemeUsingSHA512(TPM_ALG_SHA512);
+    static class RSAPSS_PaddingScheme RSAPSS_PaddingSchemeUsingSM3(TPM_ALG_SM3_256);
+    const PaddingScheme RSAPSS_SHA1 = &RSAPSS_PaddingSchemeUsingSHA1;
+    const PaddingScheme RSAPSS_SHA256 = &RSAPSS_PaddingSchemeUsingSHA256;
+    const PaddingScheme RSAPSS_SHA384 = &RSAPSS_PaddingSchemeUsingSHA384;
+    const PaddingScheme RSAPSS_SHA512 = &RSAPSS_PaddingSchemeUsingSHA512;
+    const PaddingScheme RSAPSS_SM3 = &RSAPSS_PaddingSchemeUsingSM3;
 
-/// 选择用 RSASSA 密钥对 SHA1 哈希摘要进行签名
-const TPMT_SIG_SCHEME DigitalSignatureSchemes::SHA1RSASSA = {
-    .scheme = TPM_ALG_RSASSA,
-    .details = {
-        .rsassa = {
-            .hashAlg = TPM_ALG_SHA1,
-         },
-    },
-};
+    // RSASSA-PKCS#1(v1.5)
+    // ------------------------------------------------------------------------
+    // 注意: 旧版 RSASSA-PKCS#1_v1.5 数字签名方案, 仅用于向前兼容某些历史遗留的软件
+    // 参见 RSA 算法描述文档(RFC 3447)章节 8.2 中的定义, 网址连接: https://tools.ietf.org/html/rfc3447
+    // 官方文档中, 推荐迁移至 RSA-PSS(Probabilistic Signature Scheme) 签名方案.
+    class PKCS1_PaddingScheme: public _PaddingScheme {
+    public:
+        PKCS1_PaddingScheme() {
+            scheme = TPM_ALG_RSASSA;
+            details.rsassa.hashAlg = TPM_ALG_NULL;
+        }
+        PKCS1_PaddingScheme(TPMI_ALG_HASH hashAlg) {
+            scheme = TPM_ALG_RSASSA;
+            details.rsassa.hashAlg = hashAlg;
+        }
+    };
+    static class PKCS1_PaddingScheme PKCS1_PaddingSchemeUsingSHA1(TPM_ALG_SHA1);
+    static class PKCS1_PaddingScheme PKCS1_PaddingSchemeUsingSHA256(TPM_ALG_SHA256);
+    static class PKCS1_PaddingScheme PKCS1_PaddingSchemeUsingSHA384(TPM_ALG_SHA384);
+    static class PKCS1_PaddingScheme PKCS1_PaddingSchemeUsingSHA512(TPM_ALG_SHA512);
+    static class PKCS1_PaddingScheme PKCS1_PaddingSchemeUsingSM3(TPM_ALG_SM3_256);
+    const PaddingScheme RSASSA_PKCS1_V1_5_SHA1 = &PKCS1_PaddingSchemeUsingSHA1; const PaddingScheme SHA1RSASSA = RSASSA_PKCS1_V1_5_SHA1;
+    const PaddingScheme RSASSA_PKCS1_V1_5_SHA256 = &PKCS1_PaddingSchemeUsingSHA256; const PaddingScheme SHA256RSASSA = RSASSA_PKCS1_V1_5_SHA256;
+    const PaddingScheme RSASSA_PKCS1_V1_5_SHA384 = &PKCS1_PaddingSchemeUsingSHA384;
+    const PaddingScheme RSASSA_PKCS1_V1_5_SHA512 = &PKCS1_PaddingSchemeUsingSHA512;
+    const PaddingScheme RSASSA_PKCS1_V1_5_SM3 = &PKCS1_PaddingSchemeUsingSM3;
 
-/// 选择用 RSASSA 密钥对 SHA256 哈希摘要进行签名
-const TPMT_SIG_SCHEME DigitalSignatureSchemes::SHA256RSASSA = {
-    .scheme = TPM_ALG_RSASSA,
-    .details = {
-        .rsassa = {
-            .hashAlg = TPM_ALG_SHA256,
-         },
-    },
-};
+}// end of namespace DigitalSignatureSchemes

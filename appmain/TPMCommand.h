@@ -44,8 +44,40 @@ public:
 /// @see TPMCommands::Sign::configScheme()
 namespace DigitalSignatureSchemes
 {
-extern const TPMT_SIG_SCHEME SHA1RSASSA; ///< 选择用 RSASSA 密钥对 SHA1 哈希摘要进行签名
-extern const TPMT_SIG_SCHEME SHA256RSASSA; ///< 选择用 RSASSA 密钥对 SHA256 哈希摘要进行签名
+typedef struct _PaddingScheme *PaddingScheme;
+
+/** 签名前选择用 RSA-PSS 方案对 SHA1 哈希摘要进行编码 */
+extern const PaddingScheme RSAPSS_SHA1;
+
+/** 签名前选择用 RSA-PSS 方案对 SHA256 哈希摘要进行编码 */
+extern const PaddingScheme RSAPSS_SHA256;
+
+/** 签名前选择用 RSA-PSS 方案对 SHA384 哈希摘要进行编码 */
+extern const PaddingScheme RSAPSS_SHA384;
+
+/** 签名前选择用 RSA-PSS 方案对 SHA512 哈希摘要进行编码 */
+extern const PaddingScheme RSAPSS_SHA512;
+
+/** 签名前选择用 RSA-PSS 方案对 SM3 哈希摘要进行编码 */
+extern const PaddingScheme RSAPSS_SM3;
+
+/** 签名前选择用 RSASSA-PKCS#1_v1.5 方案对 SHA1 哈希摘要进行编码 */
+extern const PaddingScheme RSASSA_PKCS1_V1_5_SHA1, ///< @note 出于安全性考虑不推荐使用 RSASSA-PKCS#1_v1.5 填充算法, 该算法仅可用于向前兼容历史遗留的软件
+                           SHA1RSASSA; ///< @note 出于安全性考虑不推荐使用 RSASSA-PKCS#1_v1.5 填充算法, 该算法仅可用于向前兼容历史遗留的软件
+
+/** 签名前选择用 RSASSA-PKCS#1_v1.5 padding 方案对 SHA256 哈希摘要进行编码 */
+extern const PaddingScheme RSASSA_PKCS1_V1_5_SHA256, ///< @note 出于安全性考虑不推荐使用 RSASSA-PKCS#1_v1.5 填充算法, 该算法仅可用于向前兼容历史遗留的软件
+                           SHA256RSASSA; ///< @note 出于安全性考虑不推荐使用 RSASSA-PKCS#1_v1.5 填充算法, 该算法仅可用于向前兼容历史遗留的软件
+
+/** 签名前选择用 RSASSA-PKCS#1_v1.5 padding 方案对 SHA384 哈希摘要进行编码 */
+extern const PaddingScheme RSASSA_PKCS1_V1_5_SHA384; ///< @note 出于安全性考虑不推荐使用 RSASSA-PKCS#1_v1.5 填充算法, 该算法仅可用于向前兼容历史遗留的软件
+
+/** 签名前选择用 RSASSA-PKCS#1_v1.5 padding 方案对 SHA512 哈希摘要进行编码 */
+extern const PaddingScheme RSASSA_PKCS1_V1_5_SHA512; ///< @note 出于安全性考虑不推荐使用 RSASSA-PKCS#1_v1.5 填充算法, 该算法仅可用于向前兼容历史遗留的软件
+
+/** 签名前选择用 RSASSA-PKCS#1_v1.5 padding 方案对 SM3 哈希摘要进行编码 */
+extern const PaddingScheme RSASSA_PKCS1_V1_5_SM3; ///< @note 出于安全性考虑不推荐使用 RSASSA-PKCS#1_v1.5 填充算法, 该算法仅可用于向前兼容历史遗留的软件
+
 }
 
 /// RSAES(RSA Encryption Schemes): the padding schemes used in RSA encryption and decryption
@@ -958,7 +990,7 @@ public:
      */
     void configValidationTicket(const TPMT_TK_HASHCHECK& ticket);
     /** 指定数字签名算法(scheme) */
-    void configScheme(const TPMT_SIG_SCHEME& inScheme=DigitalSignatureSchemes::SHA1RSASSA ///< 指定数字签名算法, 此处提供的默认值仅作为参考, 最终生产环境下安全性和效率两者之间存在矛盾, 有时候无法兼顾, 建议结合客户实际需求进行优化选择.
+    void configScheme(const DigitalSignatureSchemes::PaddingScheme inScheme ///< 指定数字签名算法
             );
     /**
      * 指定数字签名操作要使用的签名密钥(不对称密钥, 可选取 RSA, ECC 等类型)
