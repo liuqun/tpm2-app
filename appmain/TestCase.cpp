@@ -361,7 +361,6 @@ static void SigningAndSignatureVerification_SubTest1(MyAppFramework& framework)
         createprimary.configAuthPassword("", 0);
         createprimary.configKeyNameAlg(TPM_ALG_SHA1); // 备注: 前面已经设置过一次 "publicArea.nameAlg = TPM_ALG_SHA1;" 重复设置应该没有问题
         createprimary.configKeySensitiveData(primaryPassword, primaryPasswordLen, "", 0);
-        createprimary.configPublicData(publicArea);
 
         framework.sendCommand(createprimary);
         framework.fetchResponse(createprimary);
@@ -1017,7 +1016,6 @@ void TestCase::MyTestCaseForRSAEncryptionDecryptionUsingTPMProtectedRSAKey(const
         createprimary.configAuthPassword("", 0);
         createprimary.configKeyNameAlg(TPM_ALG_SHA1); // 备注: 前面已经设置过一次 "publicArea.nameAlg = TPM_ALG_SHA1;" 重复设置应该没有问题
         createprimary.configKeySensitiveData(primaryPassword, primaryPasswordLen, "", 0);
-        createprimary.configPublicData(publicArea);
 
         framework.sendCommand(createprimary);
         framework.fetchResponse(createprimary);
@@ -1338,7 +1336,6 @@ static void SigningAndSignatureVerification_SubTest2(MyAppFramework& framework)
         createprimary.configAuthPassword("", 0);
         createprimary.configKeyNameAlg(TPM_ALG_SHA1); // 备注: 前面已经设置过一次 "publicArea.nameAlg = TPM_ALG_SHA1;" 重复设置应该没有问题
         createprimary.configKeySensitiveData(primaryPassword, primaryPasswordLen, "", 0);
-        createprimary.configPublicData(publicArea);
 
         framework.sendCommand(createprimary);
         framework.fetchResponse(createprimary);
