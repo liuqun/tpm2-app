@@ -194,7 +194,7 @@ void TestCase::HashingShortMessageWithin1024Bytes(const char *hostname, unsigned
     ///////////////////////////////////////////////////////////////////////////
     TPMCommands::Hash hash;
     const char *szMessage = "abc";
-    printf("测试用例-1 szMessage: \"%s\", (共%lu字节)\n", szMessage, strlen(szMessage));
+    printf("测试用例-1 szMessage: \"%s\", (共%d字节)\n", szMessage, (int)strlen(szMessage));
     printf("预期的 SHA256 哈希摘要={ba:78:16:bf:8f:01:cf:ea:41:41:40:de:5d:ae:22:23:b0:03:61:a3:96:17:7a:9c:b4:10:ff:61:f2:00:15:ad}\n");
     printf("预期的 SHA1 哈希摘要={a9:99:3e:36:47:06:81:6a:ba:3e:25:71:78:50:c2:6c:9c:d0:d8:9d}\n");
     try
@@ -273,7 +273,7 @@ static void SigningAndSignatureVerification_SubTest1(MyAppFramework& framework)
 {
     printf("步骤一: 手动执行一条 Hash 命令, 输出一个哈希摘要值\n");
     const char szMessage[] = "abc";
-    printf("SHA256 测试用例-1 szMessage[]: \"%s\", (共%lu字节)\n", szMessage, strlen(szMessage));
+    printf("SHA256 测试用例-1 szMessage[]: \"%s\", (共%d字节)\n", szMessage, (int)strlen(szMessage));
     printf("预期的 SHA256 哈希摘要={ba:78:16:bf:8f:01:cf:ea:41:41:40:de:5d:ae:22:23:b0:03:61:a3:96:17:7a:9c:b4:10:ff:61:f2:00:15:ad}\n");
     TPMCommands::Hash hash;
     try
@@ -1248,7 +1248,7 @@ static void SigningAndSignatureVerification_SubTest2(MyAppFramework& framework)
 {
     printf("步骤一: 手动执行一条 Hash 命令, 输出一个哈希摘要值\n");
     const char szMessage[] = "abc";
-    printf("SHA256 测试用例-1 szMessage[]: \"%s\", (共%lu字节)\n", szMessage, strlen(szMessage));
+    printf("SHA256 测试用例-1 szMessage[]: \"%s\", (共%d字节)\n", szMessage, (int)strlen(szMessage));
     printf("预期的 SHA256 哈希摘要={ba:78:16:bf:8f:01:cf:ea:41:41:40:de:5d:ae:22:23:b0:03:61:a3:96:17:7a:9c:b4:10:ff:61:f2:00:15:ad}\n");
     TPMCommands::Hash hash;
     try
