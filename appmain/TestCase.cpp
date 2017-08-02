@@ -29,10 +29,8 @@ public:
     MyAppFramework();
     /** 析构函数 */
     ~MyAppFramework();
-    /** 与本地默认端口上运行的 TSS resource manager 守护进程建立连接 */
-    void connectToDefaultLocalResourceManager();
-    /** 与任意远程或本地 TSS resource manager 守护进程建立连接 */
-    void connectToResourceManager(const char *hostname="127.0.0.1", uint16_t port=2323);
+    /** 与任意远程或本地模拟器守护进程建立连接 */
+    void connectToSimulatorServer(const char *hostname="127.0.0.1", uint16_t port=2321);
     /** 发送命令帧 */
     void sendCommand(TPMCommand& cmd);
     /**
@@ -107,7 +105,7 @@ MyAppFramework::~MyAppFramework()
     free(m_sysContext);
 }
 
-void MyAppFramework::connectToResourceManager(const char *hostname, uint16_t port)
+void MyAppFramework::connectToSimulatorServer(const char *hostname, uint16_t port)
 {
     TCTI_SOCKET_CONF conf;
     conf.hostname = (char *) hostname;
@@ -139,11 +137,6 @@ void MyAppFramework::connectToResourceManager(const char *hostname, uint16_t por
     {
         // TODO: throw/raise an expection to the up level
     }
-}
-
-void MyAppFramework::connectToDefaultLocalResourceManager()
-{
-    connectToResourceManager();
 }
 
 void MyAppFramework::sendCommand(TPMCommand& cmd)
@@ -197,7 +190,7 @@ void TestCase::HashingShortMessageWithin1024Bytes(const char *hostname, unsigned
 {
     // 测试开始, 首先建立与 TSS resource manager 连接
     MyAppFramework framework;
-    framework.connectToResourceManager(hostname, (uint16_t) (port & 0xFFFF));
+    framework.connectToSimulatorServer(hostname, (uint16_t) (port & 0xFFFF));
     ///////////////////////////////////////////////////////////////////////////
     TPMCommands::Hash hash;
     const char *szMessage = "abc";
@@ -271,7 +264,7 @@ void TestCase::HashingLongMessageMoreThan1024Bytes(const char *hostname, unsigne
 {
     // 测试开始, 首先建立与 TSS resource manager 连接
     MyAppFramework framework;
-    framework.connectToResourceManager(hostname, (uint16_t) (port & 0xFFFF));
+    framework.connectToSimulatorServer(hostname, (uint16_t) (port & 0xFFFF));
     // 测试结束需要手动切断与 TSS resource manager 之间的连接
     framework.disconnect();
 }
@@ -632,13 +625,13 @@ void TestCase::SigningAndSignatureVerification(const char *hostname, unsigned in
     // 为其中每一个子测试独立建立一个链接, 访问 TSS resource manager
     // 每个子测试结束时手动切断这个链接. (下一个自测试开始时另外创建一个新链接)
     MyAppFramework framework1;
-    framework1.connectToResourceManager(hostname, (uint16_t) (port & 0xFFFF));
+    framework1.connectToSimulatorServer(hostname, (uint16_t) (port & 0xFFFF));
     printf("\n【自测试-1】\n");
     SigningAndSignatureVerification_SubTest1(framework1);
     framework1.disconnect();
 
     MyAppFramework framework2;
-    framework2.connectToResourceManager(hostname, (uint16_t) (port & 0xFFFF));
+    framework2.connectToSimulatorServer(hostname, (uint16_t) (port & 0xFFFF));
     printf("\n【自测试-2】\n");
     SigningAndSignatureVerification_SubTest2(framework2);
     framework2.disconnect();
@@ -648,7 +641,7 @@ void TestCase::HMAC::RFC2202TestCasesForHMACSHA1(const char *hostname, unsigned 
 {
     // 测试开始, 首先建立与 TSS resource manager 连接
     MyAppFramework framework;
-    framework.connectToResourceManager(hostname, (uint16_t) (port & 0xFFFF));
+    framework.connectToSimulatorServer(hostname, (uint16_t) (port & 0xFFFF));
     ///////////////////////////////////////////////////////////////////////////
     printf("测试 HMAC(基于哈希摘要的消息鉴别码), 其中用到 LoadExternal 和 HMAC 两条命令\n");
     const char *data = "Hi There"; // HMAC-SHA-1 测试数据, 来自 https://tools.ietf.org/html/rfc2202#section-3
@@ -768,7 +761,7 @@ void TestCase::HMAC::MyTestCaseForHMACSHA1UsingTPMProtectedHMACKey(const char *h
     printf("本函数将演示如何在 TPM 的保护区中创建一个对称密钥并使用该密钥进行 HMAC 运算输出 HMAC 结果(即: 基于哈希摘要的消息鉴别码)\n");
     MyAppFramework framework;
     // 测试开始, 首先建立与 TSS resource manager 连接
-    framework.connectToResourceManager(hostname, port);
+    framework.connectToSimulatorServer(hostname, port);
     ///////////////////////////////////////////////////////////////////////////
     printf("步骤一(准备步骤): 调用 CreatePrimary 命令创建一个存储密钥\n");
     const char *primaryPassword = "abcd";
@@ -967,7 +960,7 @@ void TestCase::MyTestCaseForRSAEncryptionDecryptionUsingTPMProtectedRSAKey(const
 {
     // 测试开始, 首先建立与 TSS resource manager 连接
     MyAppFramework framework;
-    framework.connectToResourceManager(hostname, (uint16_t) (port & 0xFFFF));
+    framework.connectToSimulatorServer(hostname, (uint16_t) (port & 0xFFFF));
     ///////////////////////////////////////////////////////////////////////////
     printf("步骤1: 调用 CreatePrimary 命令, 生成一个主节点(Primary 节点)\n");
     TPMCommands::CreatePrimary createprimary;
