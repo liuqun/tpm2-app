@@ -328,7 +328,7 @@ static void SigningAndSignatureVerification_SubTest1(MyAppFramework& framework)
         publicArea.authPolicy.t.size = 0;
         publicArea.parameters.rsaDetail.symmetric.algorithm = TPM_ALG_AES;
         publicArea.parameters.rsaDetail.symmetric.keyBits.aes = 128;
-        publicArea.parameters.rsaDetail.symmetric.mode.aes = TPM_ALG_ECB;
+        publicArea.parameters.rsaDetail.symmetric.mode.aes = TPM_ALG_CFB;
         publicArea.parameters.rsaDetail.scheme.scheme = TPM_ALG_NULL;
         publicArea.parameters.rsaDetail.keyBits = 2048;
         publicArea.parameters.rsaDetail.exponent = 0;
@@ -406,7 +406,7 @@ static void SigningAndSignatureVerification_SubTest1(MyAppFramework& framework)
 //          inPublic.t.publicArea.parameters.rsaDetail.symmetric.algorithm = TPM_ALG_AES;
             inPublic.t.publicArea.parameters.rsaDetail.symmetric.algorithm = TPM_ALG_NULL; // algorithm 不能被设置为 TPM_ALG_AES, 原因未知, 需要进一步研究
             inPublic.t.publicArea.parameters.rsaDetail.symmetric.keyBits.aes = 128;
-            inPublic.t.publicArea.parameters.rsaDetail.symmetric.mode.aes = TPM_ALG_ECB;
+            inPublic.t.publicArea.parameters.rsaDetail.symmetric.mode.aes = TPM_ALG_CFB;
             inPublic.t.publicArea.parameters.rsaDetail.scheme.scheme = TPM_ALG_NULL;
             inPublic.t.publicArea.parameters.rsaDetail.keyBits = 2048;
             inPublic.t.publicArea.parameters.rsaDetail.exponent = 0;
@@ -784,7 +784,7 @@ void TestCase::HMAC::MyTestCaseForHMACSHA1UsingTPMProtectedHMACKey(const char *h
         publicArea.authPolicy.t.size = 0;
         publicArea.parameters.rsaDetail.symmetric.algorithm = TPM_ALG_AES;
         publicArea.parameters.rsaDetail.symmetric.keyBits.aes = 128;
-        publicArea.parameters.rsaDetail.symmetric.mode.aes = TPM_ALG_ECB;
+        publicArea.parameters.rsaDetail.symmetric.mode.aes = TPM_ALG_CFB;
         publicArea.parameters.rsaDetail.scheme.scheme = TPM_ALG_NULL;
         publicArea.parameters.rsaDetail.keyBits = 2048;
         publicArea.parameters.rsaDetail.exponent = 0;
@@ -983,7 +983,7 @@ void TestCase::MyTestCaseForRSAEncryptionDecryptionUsingTPMProtectedRSAKey(const
         publicArea.authPolicy.t.size = 0;
         publicArea.parameters.rsaDetail.symmetric.algorithm = TPM_ALG_AES;
         publicArea.parameters.rsaDetail.symmetric.keyBits.aes = 128;
-        publicArea.parameters.rsaDetail.symmetric.mode.aes = TPM_ALG_ECB;
+        publicArea.parameters.rsaDetail.symmetric.mode.aes = TPM_ALG_CFB;
         publicArea.parameters.rsaDetail.scheme.scheme = TPM_ALG_NULL;
         publicArea.parameters.rsaDetail.keyBits = 2048;
         publicArea.parameters.rsaDetail.exponent = 0;
@@ -1303,7 +1303,7 @@ static void SigningAndSignatureVerification_SubTest2(MyAppFramework& framework)
         publicArea.authPolicy.t.size = 0;
         publicArea.parameters.rsaDetail.symmetric.algorithm = TPM_ALG_AES;
         publicArea.parameters.rsaDetail.symmetric.keyBits.aes = 128;
-        publicArea.parameters.rsaDetail.symmetric.mode.aes = TPM_ALG_ECB;
+        publicArea.parameters.rsaDetail.symmetric.mode.aes = TPM_ALG_CFB;
         publicArea.parameters.rsaDetail.scheme.scheme = TPM_ALG_NULL;
         publicArea.parameters.rsaDetail.keyBits = 2048;
         publicArea.parameters.rsaDetail.exponent = 0;
@@ -1380,7 +1380,7 @@ static void SigningAndSignatureVerification_SubTest2(MyAppFramework& framework)
             inPublic.t.publicArea.authPolicy.t.size = 0;
             inPublic.t.publicArea.parameters.rsaDetail.symmetric.algorithm = TPM_ALG_NULL;
             inPublic.t.publicArea.parameters.rsaDetail.symmetric.keyBits.aes = 128;
-            inPublic.t.publicArea.parameters.rsaDetail.symmetric.mode.aes = TPM_ALG_ECB;
+            inPublic.t.publicArea.parameters.rsaDetail.symmetric.mode.aes = TPM_ALG_CFB;
             inPublic.t.publicArea.parameters.rsaDetail.scheme.scheme = TPM_ALG_NULL;
             inPublic.t.publicArea.parameters.rsaDetail.keyBits = 2048;
             inPublic.t.publicArea.parameters.rsaDetail.exponent = 0;

@@ -63,7 +63,7 @@ CreatePrimary::CreatePrimary() {
 
     m_in->inPublic.t.publicArea.parameters.rsaDetail.symmetric.algorithm = TPM_ALG_AES;
     m_in->inPublic.t.publicArea.parameters.rsaDetail.symmetric.keyBits.aes = 128;
-    m_in->inPublic.t.publicArea.parameters.rsaDetail.symmetric.mode.aes = TPM_ALG_ECB;
+    m_in->inPublic.t.publicArea.parameters.rsaDetail.symmetric.mode.aes = TPM_ALG_CFB;
     m_in->inPublic.t.publicArea.parameters.rsaDetail.scheme.scheme = TPM_ALG_NULL;
     m_in->inPublic.t.publicArea.parameters.rsaDetail.keyBits = 2048; // 私钥位数
 
