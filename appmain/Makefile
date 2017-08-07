@@ -26,6 +26,11 @@ CXXFLAGS := $(CFLAGS)
 COMPILE_c = $(COMPILE.c)
 COMPILE_cpp = $(COMPILE.cpp)
 
+# 输入输出文件
+SRC_FILES := $(wildcard *.cpp)
+SRC_FILES_WITHOUT_SUFFIX = $(basename $(SRC_FILES))
+OBJ_FILES = $(patsubst %, %.o, $(SRC_FILES_WITHOUT_SUFFIX))
+
 .PHONY: ALWAYS_REBUILD
 libplugin.a: ALWAYS_REBUILD
 	rm -f libplugin/$@
@@ -38,7 +43,7 @@ main.o: main.cpp TPMCommand.h TestCase.h
 TestCase.o: TestCase.cpp TestCase.h TPMCommand.h
 	$(COMPILE_cpp) -o $@ $<
 
-main: main.o TestCase.o libplugin.a
+main: $(OBJ_FILES) libplugin.a
 	$(CXX) $(LD_FLAGS) -o $@ $^ $(LIBS)
 
 %.o: %.c %.h
