@@ -15,7 +15,6 @@ using namespace std;
     const uint16_t DEFAULT_RESMGR_TPM_PORT=DEFAULT_SIMULATOR_TPM_PORT;
 #endif
 #include "TPMCommand.h"
-#include "TestCase.h"
 
 /* 排版格式: 以下函数均使用4个空格缩进，不使用Tab缩进 */
 
@@ -66,7 +65,5 @@ int main(int argc, char *argv[])
         // 如果不指定命令行参数, 则会直接连接到本机 IP 地址默认端口上运行的资源管理器
     }
 
-    // 优先执行子函数中的测试内容
-    TestCase::SigningAndSignatureVerification(hostname, port);
     return (0);
 }
