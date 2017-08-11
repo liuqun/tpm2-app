@@ -34,7 +34,7 @@ OBJ_FILES = $(patsubst %, %.o, $(SRC_FILES_WITHOUT_SUFFIX))
 .PHONY: ALWAYS_REBUILD
 libplugin.a: ALWAYS_REBUILD
 	rm -f libplugin/$@
-	$(MAKE) -C libplugin $@
+	$(MAKE) -C libplugin PREFIX=$(PREFIX) $@
 	cp libplugin/$@ ./$@
 
 main.o: main.cpp TPMCommand.h TestCase.h
