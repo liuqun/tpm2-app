@@ -151,6 +151,52 @@ int main(int argc, char *argv[])
             fprintf(stderr, "Error: %s\n", err.what());
             PrintHelp();
         }
+
+        try
+        {
+            client.connect();
+
+            // 一组 HMAC-SHA-256 测试数据, 来自https://tools.ietf.org/html/rfc4231#section-4
+            const char *Data = "Hi There";
+            const uint16_t nDataLen = strlen(Data);
+            const BYTE HmacKey[20] = {
+                0x0b, 0x0b, 0x0b, 0x0b,
+                0x0b, 0x0b, 0x0b, 0x0b,
+                0x0b, 0x0b, 0x0b, 0x0b,
+                0x0b, 0x0b, 0x0b, 0x0b,
+                0x0b, 0x0b, 0x0b, 0x0b,
+            };
+            const uint16_t nHmacKeyLen = sizeof(HmacKey);
+            printf("【HMAC-SHA256 测试用例】\n");
+            printf("测试数据取自RFC-4231 https://tools.ietf.org/html/rfc4231#section-4\n");
+            printf("输入明文消息为: \"%s\" 长度: %d字节\n", Data, nDataLen);
+            printf("输入对称密钥为: \n");
+            for (UINT16 i=0; i<nHmacKeyLen; i++)
+            {
+                printf("%02X:", HmacKey[i]);
+            }
+            printf("\n");
+            printf("预期HMAC输出结果: %s\n", "b0344c61d8db38535ca8afceaf0bf12b881dc200c9833da726e9376c2e32cff7");
+
+            {
+                const std::vector<BYTE>& digest =
+                        client.HMAC_SHA256(Data, nDataLen, HmacKey, nHmacKeyLen);
+                printf("实际HMAC输出结果: ");
+                vector<BYTE>::const_iterator i;
+                for (i=digest.begin(); i!=digest.end(); i++)
+                {
+                    printf("%02X", (BYTE) *i);
+                }
+                printf("\n");
+            }
+
+            client.disconnect();
+        }
+        catch (std::exception& err)
+        {
+            fprintf(stderr, "Error: %s\n", err.what());
+            PrintHelp();
+        }
     }
 
 

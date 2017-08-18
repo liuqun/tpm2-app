@@ -82,7 +82,7 @@ using TPMCommands::FlushLoadedKeyNode;
 // 执行HMAC对称签名程序
 static void RunHMACCalcProgram(
         HMACCalculatorClient& client, // 通过client发送命令帧
-        TPMCommands::HMAC& hmac, // 已经预设好哈希算法选项的单条 HMAC 命令
+        TPMI_ALG_HASH hashAlg, // 指定哈希算法
         vector<unsigned char>& outResult, // 输出HMAC结果
         const void *data, // 指向输入数据的指针
         unsigned short nDatalength, // 数据长度. 单位: 字节. 取值范围[0, 1024], 单条输入数据的长度上限受TSS和物理硬件共同限制, 实际上限有可能小于1024字节
@@ -99,7 +99,7 @@ static void RunHMACCalcProgram(
         printf("设置 LoadExternal 命令帧参数\n");
         loadextn.configHierarchy(hierarchy);
         loadextn.configSensitiveDataBits(key, nKeyLength);
-        loadextn.configHMACKeyUsingHashAlgorithm();
+        loadextn.configHMACKeyUsingHashAlgorithm(hashAlg);
         loadextn.configKeyAuthValue(ExternalKeyPassword, ExternalKeyPasswordLen);
         printf("发送 LoadExternal 命令桢创建临时节点(用于存储用户输入的自定义对称密钥)\n");
         client.sendCommand(loadextn);
@@ -112,6 +112,7 @@ static void RunHMACCalcProgram(
         printf("临时节点创建成功, 密钥句柄=0x%08X\n", (int)loadextn.outObjectHandle());
 
         printf("调用单条 HMAC 命令\n");
+        TPMCommands::HMAC hmac;
         try {
             printf("设置 HMAC 命令帧的参数\n");
             TPM_HANDLE keyHandle = loadextn.outObjectHandle();
@@ -119,6 +120,7 @@ static void RunHMACCalcProgram(
             hmac.configAuthSession(TPM_RS_PW);
             hmac.configAuthPassword(ExternalKeyPassword, ExternalKeyPasswordLen);
             hmac.configInputData(data, nDatalength);
+            hmac.configUsingHashAlgorithm(hashAlg);
 
             printf("发送 HMAC 命令桢\n");
             client.sendCommand(hmac);
@@ -168,9 +170,7 @@ const vector<unsigned char>& HMACCalculatorClient::HMAC_SHA1(
         const void *key, // HMAC签名密钥值
         unsigned short nKeyLength // 密钥长度
         ) {
-    TPMCommands::HMAC hmac;
-    hmac.configUsingHashAlgorithmSHA1();
-    RunHMACCalcProgram(*this, hmac, m_hmacDigest, data, nDatalength, key, nKeyLength);
+    RunHMACCalcProgram(*this, TPM_ALG_SHA1, m_hmacDigest, data, nDatalength, key, nKeyLength);
     return m_hmacDigest;
 }
 
@@ -181,8 +181,6 @@ const vector<unsigned char>& HMACCalculatorClient::HMAC_SHA256(
         const void *key, // HMAC签名密钥值
         unsigned short nKeyLength // 密钥长度
         ) {
-    TPMCommands::HMAC hmac;
-    hmac.configUsingHashAlgorithmSHA256();
-    RunHMACCalcProgram(*this, hmac, m_hmacDigest, data, nDatalength, key, nKeyLength);
+    RunHMACCalcProgram(*this, TPM_ALG_SHA256, m_hmacDigest, data, nDatalength, key, nKeyLength);
     return m_hmacDigest;
 }
