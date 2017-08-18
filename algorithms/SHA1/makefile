@@ -7,7 +7,7 @@ CXX = $(CROSS_COMPILE)g++
 STRIP = $(CROSS_COMPILE)strip
 LIBS = 
 CFLAGS = -Wall -g -O0
-CXXFLAGS = $(CFLAGS)
+CXXFLAGS = $(CFLAGS) -std=c++11
 INCLUDE = -I.
 
 
@@ -30,7 +30,8 @@ SHA1.o : SHA1.cpp SHA1.h
 	$(CXX) $(CXXFLAGS) $(INCLUDE) -c $< -o $@
 
 example_c.o : example.c SHA1.h
-	$(CC) $(CXXFLAGS) $(INCLUDE) -c $< -o $@
+	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@
+example_c.o: CFLAGS+="-std=c99"
 
 example_cpp.o : example.cpp SHA1.h
 	$(CXX) $(CXXFLAGS) $(INCLUDE) -c $< -o $@
