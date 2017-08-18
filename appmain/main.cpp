@@ -161,8 +161,8 @@ int main(int argc, char *argv[])
 
     HashCalculatorClient client;
 
-    SocketBasedContextInitializer socketTCTIContextInitializer(hostname, port);
-    DeviceBasedContextInitializer deviceTCTIContextInitializer(deviceFile);
+    SocketBasedClientContextInitializer socketTCTIContextInitializer(hostname, port);
+    DeviceBasedClientContextInitializer deviceTCTIContextInitializer(deviceFile);
     if (usingDeviceFile)
     {
         client.setContextInitializer(deviceTCTIContextInitializer);

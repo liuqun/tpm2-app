@@ -15,7 +15,7 @@
 #ifdef __cplusplus
 
 /// 上下文初始化工具抽象基类: 仅声明一个回调函数接口原型 initializerCallbackFunc(), 由她的子类去集成实现该接口.
-class ContextInitializer {
+class ClientContextInitializer {
 public:
     /** 回调接口原型 */
     virtual void initializerCallbackFunc(TSS2_TCTI_CONTEXT *tctiContext, size_t tctiContextSize, TSS2_SYS_CONTEXT *sysContext, size_t sysContextSize);
@@ -25,7 +25,7 @@ public:
 class Client
 {
 private:
-    ContextInitializer *m_contextInitializer; ///<
+    ClientContextInitializer *m_contextInitializer; ///<
     TSS2_TCTI_CONTEXT *m_tctiContext; ///< 成员变量 m_tctiContext (取代全局变量 tctiContext, 降低耦合度).
     TSS2_SYS_CONTEXT *m_sysContext; ///< 成员变量 m_sysContext (取代全局变量 sysContext, 降低耦合度).
     size_t m_tctiContextSize;
@@ -37,7 +37,7 @@ public:
     /** 析构函数 */
     virtual ~Client();
     /** 指定外部回调函数, 并使用该回调函数执行 TCTI / System API 上下文对象初始化 */
-    void setContextInitializer(ContextInitializer& initializer);
+    void setContextInitializer(ClientContextInitializer& initializer);
     /**
      * 与TPM2.0设备或本地Simulator模拟器守护进程建立连接
      *
@@ -77,12 +77,12 @@ private:
 };
 
 /// 基于 TCP 套接字的 TCTI / System API 初始化工具
-class SocketBasedContextInitializer: public ContextInitializer {
+class SocketBasedClientContextInitializer: public ClientContextInitializer {
 public:
     /** 构造函数 */
-    SocketBasedContextInitializer(const char *hostname="127.0.0.1", uint16_t port=2321);
+    SocketBasedClientContextInitializer(const char *hostname="127.0.0.1", uint16_t port=2321);
     /** 析构函数 */
-    virtual ~SocketBasedContextInitializer();
+    virtual ~SocketBasedClientContextInitializer();
     /** 回调接口 */
     virtual void initializerCallbackFunc(TSS2_TCTI_CONTEXT *, size_t, TSS2_SYS_CONTEXT *, size_t);
 private:
@@ -91,12 +91,12 @@ private:
 };
 
 /// 直接读写 /dev/tpm0 设备的 TCTI / System API 初始化工具
-class DeviceBasedContextInitializer: public ContextInitializer {
+class DeviceBasedClientContextInitializer: public ClientContextInitializer {
 public:
     /** 构造函数 */
-    DeviceBasedContextInitializer(const char *device="/dev/tpm0");
+    DeviceBasedClientContextInitializer(const char *device="/dev/tpm0");
     /** 析构函数 */
-    virtual ~DeviceBasedContextInitializer();
+    virtual ~DeviceBasedClientContextInitializer();
     /** 回调接口 */
     virtual void initializerCallbackFunc(TSS2_TCTI_CONTEXT *, size_t, TSS2_SYS_CONTEXT *, size_t);
 private:

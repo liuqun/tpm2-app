@@ -155,19 +155,19 @@ void Client::connect() {
     m_contextInitializer->initializerCallbackFunc(m_tctiContext, m_tctiContextSize, m_sysContext, m_sysContextSize);
 }
 
-void Client::setContextInitializer(ContextInitializer& initializer) {
+void Client::setContextInitializer(ClientContextInitializer& initializer) {
     m_contextInitializer = &initializer;
 }
 
 // 以下为 TCTI / System API 上下文初始化工具
 
 // 回调函数原型 initializerCallbackFunc()
-void ContextInitializer::initializerCallbackFunc(TSS2_TCTI_CONTEXT *tctiContext, size_t tctiContextSize, TSS2_SYS_CONTEXT *sysContext, size_t sysContextSize)
+void ClientContextInitializer::initializerCallbackFunc(TSS2_TCTI_CONTEXT *tctiContext, size_t tctiContextSize, TSS2_SYS_CONTEXT *sysContext, size_t sysContextSize)
 {
 }
 
-// 构造函数 SocketBasedContextInitializer()
-SocketBasedContextInitializer::SocketBasedContextInitializer(const char *hostname, uint16_t port)
+// 构造函数 SocketBasedClientContextInitializer()
+SocketBasedClientContextInitializer::SocketBasedClientContextInitializer(const char *hostname, uint16_t port)
 {
     if (!hostname)
     {
@@ -177,13 +177,13 @@ SocketBasedContextInitializer::SocketBasedContextInitializer(const char *hostnam
     m_port = port;
 }
 
-// 析构函数 ~SocketBasedContextInitializer()
-SocketBasedContextInitializer::~SocketBasedContextInitializer()
+// 析构函数 ~SocketBasedClientContextInitializer()
+SocketBasedClientContextInitializer::~SocketBasedClientContextInitializer()
 {
 }
 
 // 回调函数 initializerCallbackFunc()
-void SocketBasedContextInitializer::initializerCallbackFunc(TSS2_TCTI_CONTEXT *tctiContext, size_t tctiContextSize, TSS2_SYS_CONTEXT *sysContext, size_t sysContextSize)
+void SocketBasedClientContextInitializer::initializerCallbackFunc(TSS2_TCTI_CONTEXT *tctiContext, size_t tctiContextSize, TSS2_SYS_CONTEXT *sysContext, size_t sysContextSize)
 {
     TCTI_SOCKET_CONF conf;
     conf.hostname = (const char *) m_hostname;
@@ -217,8 +217,8 @@ void SocketBasedContextInitializer::initializerCallbackFunc(TSS2_TCTI_CONTEXT *t
     }
 }
 
-// 构造函数 DeviceBasedContextInitializer()
-DeviceBasedContextInitializer::DeviceBasedContextInitializer(const char *device)
+// 构造函数 DeviceBasedClientContextInitializer()
+DeviceBasedClientContextInitializer::DeviceBasedClientContextInitializer(const char *device)
 {
     if (!device)
     {
@@ -227,13 +227,13 @@ DeviceBasedContextInitializer::DeviceBasedContextInitializer(const char *device)
     m_device = device;
 }
 
-// 析构函数 ~DeviceBasedContextInitializer()
-DeviceBasedContextInitializer::~DeviceBasedContextInitializer()
+// 析构函数 ~DeviceBasedClientContextInitializer()
+DeviceBasedClientContextInitializer::~DeviceBasedClientContextInitializer()
 {
 }
 
 // 回调函数 initializerCallbackFunc()
-void DeviceBasedContextInitializer::initializerCallbackFunc(TSS2_TCTI_CONTEXT *tctiContext, size_t tctiContextSize, TSS2_SYS_CONTEXT *sysContext, size_t sysContextSize)
+void DeviceBasedClientContextInitializer::initializerCallbackFunc(TSS2_TCTI_CONTEXT *tctiContext, size_t tctiContextSize, TSS2_SYS_CONTEXT *sysContext, size_t sysContextSize)
 {
     TCTI_DEVICE_CONF conf;
     conf.device_path = (const char *) m_device;
