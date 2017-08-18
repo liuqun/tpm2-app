@@ -214,6 +214,10 @@ public:
     virtual void buildCmdPacket(TSS2_SYS_CONTEXT *ctx);
     virtual void unpackRspPacket(TSS2_SYS_CONTEXT *ctx);
     virtual ~HMAC();
+    /** 指定 HMAC 运算内部选用的哈希算法(以TPM2.0标准编码的形式) */
+    void configUsingHashAlgorithm(
+            TPMI_ALG_HASH hashAlg=0x0004 ///< 哈希算法编码. 可选值TPM_ALG_SHA1=0x0004, TPM_ALG_SHA256=0x000B等. 其他哈希算法还有SHA384/SHA512/SM3_256/SHA3_256等, TPM2.0设备至少支持SHA1和SHA256两种哈希算法.
+            );
     /** 指定 HMAC 内部使用的哈希算法为 SHA1 */
     void configUsingHashAlgorithmSHA1();
     /** 指定 HMAC 内部使用的哈希算法为 SHA256 */
