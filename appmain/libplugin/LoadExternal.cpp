@@ -173,19 +173,18 @@ void LoadExternal::configHMACKeyUsingHashAlgorithm(TPMI_ALG_HASH hashAlg) {
     m_in->inPublic.t.publicArea.parameters.keyedHashDetail.scheme.details.hmac.hashAlg = hashAlg;
     m_in->inPublic.t.publicArea.objectAttributes.decrypt = 0; // 此选项对于对称密钥无意义, 必须赋值decrypt=0手动清零, 否则会报参数错误 TPM_RC_P=0x40, TPM_RC_SCHEME=(RC_FMT1+0x12)=0x92. (若此密钥为不对称密钥, 则标记位 decrypt 指示私钥可以用于解密之前由公钥加密生成的密文).
 }
+void LoadExternal::configKeyTypeSymmetricAES128CFB() {
+    m_in->inPrivate.t.sensitiveArea.sensitiveType = TPM_ALG_SYMCIPHER;
+    m_in->inPublic.t.publicArea.type = TPM_ALG_SYMCIPHER;
+    TPMT_SYM_DEF_OBJECT *sym; // 临时指针: 指向 inPublic 结构体深处的 sym 字段
+    sym = &(m_in->inPublic.t.publicArea.parameters.symDetail.sym);
+    sym->algorithm = TPM_ALG_AES;
+    sym->keyBits.aes = 128;
+    sym->mode.aes = TPM_ALG_CFB;
+    m_in->inPublic.t.publicArea.objectAttributes.decrypt = 1; // 允许用于对称解密
+    m_in->inPublic.t.publicArea.objectAttributes.sign = 1; // 允许用于对称加密. 注: sign与encrypt共用此标记位, 此处密钥为对称密钥, 该标记位与仅表示对称加密
+}
 #if 0 // 暂时注释掉下列 API 接口
-//void LoadExternal::configKeyTypeSymmetricAES128CFB() {
-//    const TPMI_ALG_PUBLIC type = TPM_ALG_SYMCIPHER;
-//
-//    m_in->inPublic.t.publicArea.type = type;
-//    m_in->inPrivate.t.sensitiveArea.sensitiveType = type;
-//
-//    TPMT_SYM_DEF_OBJECT *sym // 指向 inPublic 结构体深处的 sym 字段
-//            = &(m_in->inPublic.t.publicArea.parameters.symDetail.sym);
-//    sym->algorithm = TPM_ALG_AES;
-//    sym->keyBits.aes = 128; ///< @see 另见宏定义 MAX_SYM_DATA: 对称密钥最大长度 =128 位
-//    sym->mode.aes = TPM_ALG_CFB;
-//}
 //void LoadExternal::configKeyType(TPMI_ALG_PUBLIC type) {
 //    m_in->inPublic.t.publicArea.type = type;
 //    m_in->inPrivate.t.sensitiveArea.sensitiveType = type;
