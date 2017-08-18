@@ -27,11 +27,11 @@ class Client
 private:
     ClientContextInitializer *m_contextInitializer; ///<
     TSS2_TCTI_CONTEXT *m_tctiContext; ///< 成员变量 m_tctiContext (取代全局变量 tctiContext, 降低耦合度).
-    TSS2_SYS_CONTEXT *m_sysContext; ///< 成员变量 m_sysContext (取代全局变量 sysContext, 降低耦合度).
     size_t m_tctiContextSize;
     size_t m_sysContextSize;
 
 public:
+    TSS2_SYS_CONTEXT *m_sysContext; ///< 成员变量 m_sysContext (取代全局变量 sysContext, 降低耦合度).
     /** 构造函数 */
     Client();
     /** 析构函数 */
