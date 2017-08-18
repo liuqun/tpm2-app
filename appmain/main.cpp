@@ -90,6 +90,70 @@ int main(int argc, char *argv[])
         // 如果不指定命令行参数, 则会直接连接到本机 IP 地址默认端口上运行的资源管理器
     }
 
+    SocketBasedClientContextInitializer socketTCTIContextInitializer(hostname, port);
+    DeviceBasedClientContextInitializer deviceTCTIContextInitializer(deviceFile);
+
+    ClientContextInitializer *pInitializer; ///< 通过指针选择使用哪一个上下文初始化器
+
+    pInitializer = &socketTCTIContextInitializer;
+    if (usingDeviceFile)
+    {
+        pInitializer = &deviceTCTIContextInitializer;
+    }
+
+    /* HMAC 测试 */
+    {
+        HMACCalculatorClient client;
+        client.setContextInitializer(*pInitializer);
+
+        try
+        {
+            client.connect();
+
+            // 一组 HMAC-SHA-1 测试数据, 来自 https://tools.ietf.org/html/rfc2202#section-3
+            const char *Data = "Hi There";
+            const uint16_t nDataLen = strlen(Data);
+            const BYTE HmacKey[] = {
+                0x0b, 0x0b, 0x0b, 0x0b,
+                0x0b, 0x0b, 0x0b, 0x0b,
+                0x0b, 0x0b, 0x0b, 0x0b,
+                0x0b, 0x0b, 0x0b, 0x0b,
+                0x0b, 0x0b, 0x0b, 0x0b,
+            };
+            const uint16_t nHmacKeyLen = sizeof(HmacKey);
+            printf("【HMAC-SHA1 测试用例1】\n");
+            printf("测试数据取自RFC-2202 https://tools.ietf.org/html/rfc2202#section-3\n");
+            printf("输入明文消息为: \"%s\" 长度: %d字节\n", Data, nDataLen);
+            printf("输入对称密钥为: \n");
+            for (UINT16 i=0; i<nHmacKeyLen; i++)
+            {
+                printf("%02X:", HmacKey[i]);
+            }
+            printf("\n");
+            printf("预期HMAC输出结果: %s\n", "b6:17:31:86:55:05:72:64:e2:8b:c0:b6:fb:37:8c:8e:f1:46:be:00");
+
+            {
+                const std::vector<BYTE>& digest =
+                        client.HMAC_SHA1(Data, nDataLen, HmacKey, nHmacKeyLen);
+                printf("实际HMAC输出结果: ");
+                vector<BYTE>::const_iterator i;
+                for (i=digest.begin(); i!=digest.end(); i++)
+                {
+                    printf("%02X:", (BYTE) *i);
+                }
+                printf("\n");
+            }
+
+            client.disconnect();
+        }
+        catch (std::exception& err)
+        {
+            fprintf(stderr, "Error: %s\n", err.what());
+            PrintHelp();
+        }
+    }
+
+
 #if 0
     const char *szMsg = "abc";
     const uint16_t nMsgLen = strlen(szMsg);
