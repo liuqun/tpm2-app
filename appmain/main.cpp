@@ -90,6 +90,7 @@ int main(int argc, char *argv[])
         // 如果不指定命令行参数, 则会直接连接到本机 IP 地址默认端口上运行的资源管理器
     }
 
+#if 0
     const char *szMsg = "abc";
     const uint16_t nMsgLen = strlen(szMsg);
     printf("测试输入字符串为szMsg='%s', 长度=%d字节\n", szMsg, (int)nMsgLen);
@@ -141,6 +142,7 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Error: %s\n", err.what());
         PrintHelp();
     }
+#endif
 
     return (0);
 }
