@@ -16,6 +16,7 @@ using namespace std;
 #endif
 #include "TPMCommand.h"
 #include "Client.h"
+#include "CalculatorClient.h"
 
 /* 排版格式: 以下函数均使用4个空格缩进，不使用Tab缩进 */
 
@@ -92,72 +93,6 @@ int main(int argc, char *argv[])
     const char *szMsg = "abc";
     const uint16_t nMsgLen = strlen(szMsg);
     printf("测试输入字符串为szMsg='%s', 长度=%d字节\n", szMsg, (int)nMsgLen);
-
-    /// 计算单个数据包的哈希摘要, 输入数据的最大长度由TPM硬件以及TSS动态库限制, 通常为1024字节
-    class HashCalculatorClient: public Client
-    {
-    public:
-        /// 计算SHA256哈希摘要结果
-        ///
-        /// @return 哈希摘要结果, 格式为二进制数据, 类型为 const vector<BYTE>& C++ 指针引用
-        /// @throws std::exception 代表执行失败, 常见异常情况包括: 无法打开TPM设备文件/dev/tpm0或无法与Simulator建立Socket连接
-        const vector<BYTE>& SHA256(const void *data, ///< 指向输入数据的指针
-                UINT16 length ///< 数据长度. 单位: 字节. 取值范围[0, 1024], 单条输入数据的长度上限受TSS和物理硬件共同限制, 实际上限有可能小于1024字节
-                )
-        {
-            m_hashCmd.configHashAlgorithmUsingSHA256();
-            return sendHashCommandAndWaitUntilResponseIsFetched(data, length);
-        }
-
-    public:
-        /// 计算SHA1哈希摘要结果
-        ///
-        /// @return 哈希摘要结果, 格式为二进制数据, 类型为 const vector<BYTE>& C++ 指针引用
-        /// @throws std::exception 代表执行失败, 常见异常情况包括: 无法打开TPM设备文件/dev/tpm0或无法与Simulator建立Socket连接
-        const vector<BYTE>& SHA1(const void *data, ///< 指向输入数据的指针
-                UINT16 length ///< 数据长度. 单位: 字节. 取值范围[0, 1024], 单条输入数据的长度上限受TSS和物理硬件共同限制, 实际上限有可能小于1024字节
-                )
-        {
-            m_hashCmd.configHashAlgorithmUsingSHA1();
-            return sendHashCommandAndWaitUntilResponseIsFetched(data, length);
-        }
-
-    private:
-        /// 发送哈希命令然后取回摘要结果
-        ///
-        /// @return 哈希摘要结果, 格式为二进制数据, 类型为 const vector<BYTE>& C++ 指针引用
-        /// @throws std::exception 代表执行失败, 常见异常情况包括: 无法打开TPM设备文件/dev/tpm0或无法与Simulator建立Socket连接
-        const vector<BYTE>& sendHashCommandAndWaitUntilResponseIsFetched(
-                const void *data, ///< 指向输入数据的指针
-                UINT16 length ///< 数据长度. 单位: 字节. 取值范围[0, 1024], 单条输入数据的长度上限受TSS和物理硬件共同限制, 实际上限有可能小于1024字节
-                )
-        {
-            m_digest.clear();
-            try
-            {
-                m_hashCmd.configInputData(data, length);
-                sendCommandAndWaitUntilResponseIsFetched(m_hashCmd);
-                const TPM2B_DIGEST &outHash = m_hashCmd.outHash();
-                m_digest.assign(outHash.t.buffer, outHash.t.buffer+outHash.t.size);
-                return m_digest;
-            }
-            catch (...)
-            {
-                std::stringstream msg;
-                msg << "An unknown error was detected from " << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__;
-                throw std::runtime_error(msg.str());
-            }
-            return m_digest;
-        }
-
-    private:
-        /// 哈希摘要结果私有数据存储区
-        std::vector<BYTE> m_digest;
-
-    private:
-        /// 被测对象TPMCommands::Hash类
-        TPMCommands::Hash m_hashCmd;
-    };
 
     HashCalculatorClient client;
 
