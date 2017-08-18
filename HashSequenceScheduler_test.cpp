@@ -24,7 +24,7 @@ static void PrintHelp()
     printf("用法:\n");
     printf("-rmhost 手动指定运行资源管理器(即 resourcemgr)的主机IP地址或主机名 (默认值: %s)\n",
             DEFAULT_HOSTNAME);
-    printf("-rmport 手动指定运行资源管理器的主机端口号 (默认值: %d)\n", DEFAULT_RESMGR_TPM_PORT);
+    printf("-rmport 手动指定运行资源管理器的主机端口号 (默认值: %d)\n", 2323);
 }
 
 int main(int argc, char *argv[])
@@ -35,7 +35,7 @@ int main(int argc, char *argv[])
     int count;
 
     rmInterfaceConfig.hostname = DEFAULT_HOSTNAME;
-    rmInterfaceConfig.port = DEFAULT_RESMGR_TPM_PORT;
+    rmInterfaceConfig.port = 2323;
     rmInterfaceConfig.logCallback = DebugPrintfCallback;
     rmInterfaceConfig.logBufferCallback = DebugPrintBufferCallback;
     rmInterfaceConfig.logData = NULL;
