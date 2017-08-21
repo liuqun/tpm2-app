@@ -95,109 +95,46 @@ int main(int argc, char *argv[])
 
     ClientContextInitializer *pInitializer; ///< 通过指针选择使用哪一个上下文初始化器
 
-    pInitializer = &socketTCTIContextInitializer;
+    pInitializer = &socketTCTIContextInitializer; // 默认优先使用socket TCTI 连接2323端口上的resourcemgr或2321端口上的Simulator
     if (usingDeviceFile)
     {
         pInitializer = &deviceTCTIContextInitializer;
     }
 
-    /* HMAC 测试 */
+    HashCalculatorClient client;
+    client.setContextInitializer(*pInitializer);
+    client.connect();
+    /* 第一组测试数据 */
     {
-        HMACCalculatorClient client;
-        client.setContextInitializer(*pInitializer);
+        const char *szMsg = "abc";
+        const uint16_t nMsgLen = strlen(szMsg);
+        printf("测试输入字符串为szMsg='%s', 长度=%d字节\n", szMsg, (int)nMsgLen);
 
-        try
+        printf("输出SHA1哈希结果如下:\n");
         {
-            client.connect();
-
-            // 一组 HMAC-SHA-1 测试数据, 来自 https://tools.ietf.org/html/rfc2202#section-3
-            const char *Data = "Hi There";
-            const uint16_t nDataLen = strlen(Data);
-            const BYTE HmacKey[] = {
-                0x0b, 0x0b, 0x0b, 0x0b,
-                0x0b, 0x0b, 0x0b, 0x0b,
-                0x0b, 0x0b, 0x0b, 0x0b,
-                0x0b, 0x0b, 0x0b, 0x0b,
-                0x0b, 0x0b, 0x0b, 0x0b,
-            };
-            const uint16_t nHmacKeyLen = sizeof(HmacKey);
-            printf("【HMAC-SHA1 测试用例1】\n");
-            printf("测试数据取自RFC-2202 https://tools.ietf.org/html/rfc2202#section-3\n");
-            printf("输入明文消息为: \"%s\" 长度: %d字节\n", Data, nDataLen);
-            printf("输入对称密钥为: \n");
-            for (UINT16 i=0; i<nHmacKeyLen; i++)
+            const std::vector<BYTE>& digest =
+                    client.SHA1(szMsg, nMsgLen);
+            vector<BYTE>::const_iterator i;
+            for (i=digest.begin(); i!=digest.end(); i++)
             {
-                printf("%02X:", HmacKey[i]);
+                printf("%02X:", (BYTE) *i);
             }
             printf("\n");
-            printf("预期HMAC输出结果: %s\n", "b6:17:31:86:55:05:72:64:e2:8b:c0:b6:fb:37:8c:8e:f1:46:be:00");
-
-            {
-                const std::vector<BYTE>& digest =
-                        client.HMAC_SHA1(Data, nDataLen, HmacKey, nHmacKeyLen);
-                printf("实际HMAC输出结果: ");
-                vector<BYTE>::const_iterator i;
-                for (i=digest.begin(); i!=digest.end(); i++)
-                {
-                    printf("%02X:", (BYTE) *i);
-                }
-                printf("\n");
-            }
-
-            client.disconnect();
-        }
-        catch (std::exception& err)
-        {
-            fprintf(stderr, "Error: %s\n", err.what());
-            PrintHelp();
         }
 
-        try
+        printf("输出SHA256哈希结果如下:\n");
         {
-            client.connect();
-
-            // 一组 HMAC-SHA-256 测试数据, 来自https://tools.ietf.org/html/rfc4231#section-4
-            const char *Data = "Hi There";
-            const uint16_t nDataLen = strlen(Data);
-            const BYTE HmacKey[20] = {
-                0x0b, 0x0b, 0x0b, 0x0b,
-                0x0b, 0x0b, 0x0b, 0x0b,
-                0x0b, 0x0b, 0x0b, 0x0b,
-                0x0b, 0x0b, 0x0b, 0x0b,
-                0x0b, 0x0b, 0x0b, 0x0b,
-            };
-            const uint16_t nHmacKeyLen = sizeof(HmacKey);
-            printf("【HMAC-SHA256 测试用例】\n");
-            printf("测试数据取自RFC-4231 https://tools.ietf.org/html/rfc4231#section-4\n");
-            printf("输入明文消息为: \"%s\" 长度: %d字节\n", Data, nDataLen);
-            printf("输入对称密钥为: \n");
-            for (UINT16 i=0; i<nHmacKeyLen; i++)
+            const std::vector<BYTE>& digest =
+                    client.SHA256(szMsg, nMsgLen);
+            vector<BYTE>::const_iterator i;
+            for (i=digest.begin(); i!=digest.end(); i++)
             {
-                printf("%02X:", HmacKey[i]);
+                printf("%02X:", (BYTE) *i);
             }
             printf("\n");
-            printf("预期HMAC输出结果: %s\n", "b0344c61d8db38535ca8afceaf0bf12b881dc200c9833da726e9376c2e32cff7");
-
-            {
-                const std::vector<BYTE>& digest =
-                        client.HMAC_SHA256(Data, nDataLen, HmacKey, nHmacKeyLen);
-                printf("实际HMAC输出结果: ");
-                vector<BYTE>::const_iterator i;
-                for (i=digest.begin(); i!=digest.end(); i++)
-                {
-                    printf("%02X", (BYTE) *i);
-                }
-                printf("\n");
-            }
-
-            client.disconnect();
-        }
-        catch (std::exception& err)
-        {
-            fprintf(stderr, "Error: %s\n", err.what());
-            PrintHelp();
         }
     }
+    client.disconnect();
 
     return (0);
 }
