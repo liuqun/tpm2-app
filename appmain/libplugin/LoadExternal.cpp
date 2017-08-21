@@ -184,6 +184,14 @@ void LoadExternal::configKeyTypeSymmetricAES128CFB() {
     m_in->inPublic.t.publicArea.objectAttributes.decrypt = 1; // 允许用于对称解密
     m_in->inPublic.t.publicArea.objectAttributes.sign = 1; // 允许用于对称加密. 注: sign与encrypt共用此标记位, 此处密钥为对称密钥, 该标记位与仅表示对称加密
 }
+// 3. 选择密钥类型为KEYEDHASH通用型(既可以作为HMAC签名密钥也可以作为XOR加解密密钥)
+void LoadExternal::configKeyTypeKeyedHashKey() {
+    m_in->inPrivate.t.sensitiveArea.sensitiveType = TPM_ALG_KEYEDHASH;
+    m_in->inPublic.t.publicArea.type = TPM_ALG_KEYEDHASH;
+    m_in->inPublic.t.publicArea.objectAttributes.decrypt = 1;
+    m_in->inPublic.t.publicArea.objectAttributes.sign = 1;
+    m_in->inPublic.t.publicArea.parameters.keyedHashDetail.scheme.scheme = TPM_ALG_NULL;
+}
 #if 0 // 暂时注释掉下列 API 接口
 //void LoadExternal::configKeyType(TPMI_ALG_PUBLIC type) {
 //    m_in->inPublic.t.publicArea.type = type;

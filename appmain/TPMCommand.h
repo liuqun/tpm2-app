@@ -736,6 +736,8 @@ public:
 //   */
 //  void configKeyNameAlg(TPMI_ALG_HASH nameAlg=TPM_ALG_NULL);
 #endif
+    /** 指定密钥类型为 Keyed Hash Key 但不指定具体哈希算法, 此种密钥类型既可以被用于计算HMAC签名, 也可用于XOR解密或加密 */
+    void configKeyTypeKeyedHashKey();
     /**
      * 指定密钥类型为 HMAC 同时设置其哈希算法
      */
