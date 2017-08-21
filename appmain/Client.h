@@ -76,6 +76,63 @@ private:
     TPMCommand *m_pLastCommand; ///< 内部成员变量. m_pLastCommand总是指向之前最后一次调用sendCommand()成员函数时的关联的TPMCommand参数的内存地址
 };
 
+class SequenceScheduler: public Client
+{
+};
+
+class HMACSequenceScheduler: public SequenceScheduler
+{
+public:
+    HMACSequenceScheduler();
+    ~HMACSequenceScheduler();
+
+    /// 开启HMAC序列
+    ///
+    /// @param keyHandle
+    /// @param hashAlgorithm TPM2.0 哈希算法编号. 遇到无效的哈希算法编号则尝试使用keyHandle密钥中的指定的哈希算法
+    /// @throws std::exception 通过 std::exception::what() 描述错误原因
+    void start(TPM_HANDLE keyHandle, TPMI_ALG_HASH hashAlgorithm);
+
+    /// HMAC序列输入下一个数据包
+    ///
+    /// @param data
+    /// @param length
+    /// @throws std::exception 通过 std::exception::what() 描述错误原因
+    void inputData(const void *data, unsigned int length);
+
+    /// 结束当前HMAC序列, 取回计算结果后存储在类成员变量中
+    ///
+    /// @throws std::exception 通过 std::exception::what() 描述错误原因
+    void complete();
+
+    /// 输出HMAC
+    ///
+    /// @return TPM2B_DIGEST 结构体引用
+    const TPM2B_DIGEST& outHMAC();
+
+    /// 输出凭证
+    ///
+    /// @return TPMT_TK_HASHCHECK 结构体引用
+    const TPMT_TK_HASHCHECK& outValidationTicket();
+
+public:
+    const void *m_externalKeyPassword;
+    unsigned m_externalKeyPasswordLen;
+    TPM_HANDLE loadExternalKey(const void *key, unsigned int length);
+    void flushLoadedKey(TPM_HANDLE keyHandle);
+
+private:
+    TPM2B_DIGEST m_hmacDigest;///< 存储最终HMAC结果
+private:
+    TPMT_TK_HASHCHECK m_validationTicket;///< 存储本次计算是由TPM完成的校验凭证
+private:
+    TPM2B_MAX_BUFFER m_cachedData;///< 预留缓存区, 提高IO效率
+private:
+    TPMI_DH_OBJECT m_savedSequenceHandle;
+private:
+    TPM2B_AUTH m_savedAuthValueForSequenceHandle;
+};
+
 /// 基于 TCP 套接字的 TCTI / System API 初始化工具
 class SocketBasedClientContextInitializer: public ClientContextInitializer {
 public:
