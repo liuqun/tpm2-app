@@ -88,10 +88,13 @@ public:
 
     /// 开启HMAC序列
     ///
-    /// @param keyHandle
     /// @param hashAlgorithm TPM2.0 哈希算法编号. 遇到无效的哈希算法编号则尝试使用keyHandle密钥中的指定的哈希算法
+    /// @param key
+    /// @param keyLength
+    /// @param keyPassword
+    /// @param keyPasswordLength
     /// @throws std::exception 通过 std::exception::what() 描述错误原因
-    void start(TPM_HANDLE keyHandle, TPMI_ALG_HASH hashAlgorithm);
+    void start(TPMI_ALG_HASH hashAlgorithm, const void *key, unsigned int keyLength, const void *keyPassword="", unsigned int keyPasswordLength=0);
 
     /// HMAC序列输入下一个数据包
     ///
@@ -114,12 +117,6 @@ public:
     ///
     /// @return TPMT_TK_HASHCHECK 结构体引用
     const TPMT_TK_HASHCHECK& outValidationTicket();
-
-public:
-    const void *m_externalKeyPassword;
-    unsigned m_externalKeyPasswordLen;
-    TPM_HANDLE loadExternalKey(const void *key, unsigned int length);
-    void flushLoadedKey(TPM_HANDLE keyHandle);
 
 private:
     TPM2B_DIGEST m_hmacDigest;///< 存储最终HMAC结果

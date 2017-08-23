@@ -33,40 +33,7 @@ inline static int NoPrintf()
 #endif
 
 // (函数描述参见头文件中的定义)
-TPM_HANDLE HMACSequenceScheduler::loadExternalKey(const void *key, unsigned int length) {
-    TPMI_RH_HIERARCHY hierarchy = TPM_RH_NULL; // 在 TPM_RH_NULL 区域创建的节点是临时节点
-    TPM_HANDLE result = 0xFC000000;
-    TPMCommands::LoadExternal loadextn;
-    try {
-        printf("设置 LoadExternal 命令帧参数\n");
-        loadextn.configHierarchy(hierarchy);
-        loadextn.configSensitiveDataBits(key, length);
-        loadextn.configKeyTypeKeyedHashKey();
-        loadextn.configKeyAuthValue(m_externalKeyPassword, m_externalKeyPasswordLen);
-        printf("发送 LoadExternal 命令桢创建临时节点(用于存储用户输入的自定义对称密钥)\n");
-        sendCommand(loadextn);
-        fetchResponse();
-        printf("临时节点创建成功, 密钥句柄=0x%08X\n", (int)loadextn.outObjectHandle());
-        result = loadextn.outObjectHandle();
-    } catch (TSS2_RC rc) {
-        std::stringstream msg;
-        msg << "TPM Command LoadExternal() has returned an error code 0x" << std::hex << rc;
-        throw std::runtime_error(msg.str());
-    } catch (...) {
-        throw std::runtime_error("Unknown error happened in TPM command LoadExternal()\n");
-    }
-
-    char buf[length];
-    memset(buf, 0xFF, length);
-    loadextn.configSensitiveDataBits(buf, length); // 手动覆盖清除之前缓存的对称密钥值副本(清除敏感数据)
-
-    return result;
-}
-
-// (函数描述参见头文件中的定义)
 HMACSequenceScheduler::HMACSequenceScheduler() {
-    m_externalKeyPassword = (void *)"";
-    m_externalKeyPasswordLen = strlen((char *)m_externalKeyPassword);
     m_savedSequenceHandle = 0x0;
     m_cachedData.t.size = 0;
     m_hmacDigest.t.size = 0;
@@ -77,55 +44,6 @@ HMACSequenceScheduler::HMACSequenceScheduler() {
 HMACSequenceScheduler::~HMACSequenceScheduler() {
     // 擦除缓存的明文数据
     memset(&m_cachedData, 0xFF, sizeof(m_cachedData));
-}
-
-// (函数描述参见头文件中的定义)
-void HMACSequenceScheduler::start(TPM_HANDLE keyHandle, TPMI_ALG_HASH hashAlgorithm) {
-    TPMS_AUTH_COMMAND *cmdAuths[3];
-    TSS2_SYS_CMD_AUTHS cmdAuthsArray;
-    TPMS_AUTH_COMMAND cmdAuthBlob;
-    cmdAuthBlob.sessionHandle = TPM_RS_PW;
-    cmdAuthBlob.nonce.t.size = 0;
-    cmdAuthBlob.sessionAttributes.val = 0x0;
-    cmdAuthBlob.hmac.t.size = 0; // FIXME: 未指定keyHandle密码
-    cmdAuths[0] = &cmdAuthBlob;
-    cmdAuths[1] = cmdAuths[2] = NULL;
-    cmdAuthsArray.cmdAuths = cmdAuths;
-    cmdAuthsArray.cmdAuthsCount = 1;
-
-    TPMS_AUTH_RESPONSE *rspAuths[3];
-    TSS2_SYS_RSP_AUTHS rspAuthsArray;
-    TPMS_AUTH_RESPONSE rspAuthBlob;
-    memset(&rspAuthBlob, 0x00, sizeof(rspAuthBlob));
-    rspAuths[0] = &rspAuthBlob;
-    rspAuths[1] = rspAuths[2] = NULL;
-    rspAuthsArray.rspAuths = rspAuths;
-    rspAuthsArray.rspAuthsCount = cmdAuthsArray.cmdAuthsCount;
-
-    TPM2B_AUTH& auth=m_savedAuthValueForSequenceHandle;
-    auth.t.size = 0; // TODO: 允许自定义HMAC流密码
-
-    TPMI_DH_OBJECT sequenceHandle = 0x0;
-
-    if (TPM_ALG_NULL == hashAlgorithm) {
-        // FIXME: Warning: 当调用者指定算法编码 algorithm=0x0010 (即 TPM_ALG_NULL) 时, TPM 会将该序列初始化成一个 EventSequence (事件序列)
-    }
-
-    m_savedSequenceHandle = 0x0; // 方便调试
-    TPM_RC rc = Tss2_Sys_HMAC_Start(m_sysContext,
-            keyHandle, // IN
-            &cmdAuthsArray, // IN
-            &auth, // IN
-            hashAlgorithm, // IN
-            &sequenceHandle, // OUT
-            &rspAuthsArray /* OUT */);
-    if (rc) {
-        std::stringstream msg;
-        msg << "HMACSequenceScheduler::start(): TPM Command Tss2_Sys_HMAC_Start() has returned an error code 0x" << std::hex << rc;
-        throw runtime_error(msg.str());
-    }
-    m_savedSequenceHandle = sequenceHandle;
-    m_cachedData.t.size = 0;
 }
 
 // (函数描述参见头文件中的定义)
@@ -257,4 +175,86 @@ void HMACSequenceScheduler::complete() {
         msg << "HMACSequenceScheduler::complete(): TPM Command Tss2_Sys_SequenceComplete() has returned an error code 0x" << std::hex << err;
         throw runtime_error(msg.str());
     }
+}
+
+// HMAC序列调度器 -- 子函数 start(). (功能描述参见头文件中的定义)
+void HMACSequenceScheduler::start(TPMI_ALG_HASH hashAlgorithm, const void *key, unsigned int keyLen, const void *keyPassword, unsigned int keyPasswordLen) {
+    TPMI_RH_HIERARCHY hierarchy = TPM_RH_NULL; // 在 TPM_RH_NULL 区域创建的节点是临时密钥节点
+    TPM_HANDLE keyHandle = 0xFC000000;
+    TPMCommands::LoadExternal loadextn;
+    try {
+        printf("设置 LoadExternal 命令帧参数\n");
+        loadextn.configHierarchy(hierarchy);
+        loadextn.configSensitiveDataBits(key, keyLen);
+        loadextn.configKeyTypeKeyedHashKey();
+        loadextn.configKeyAuthValue(keyPassword, keyPasswordLen);
+        printf("发送 LoadExternal 命令桢创建临时节点(用于存储用户输入的自定义对称密钥)\n");
+        sendCommand(loadextn);
+        fetchResponse();
+        printf("临时节点创建成功, 密钥句柄=0x%08X\n", (int)loadextn.outObjectHandle());
+        keyHandle = loadextn.outObjectHandle();
+    } catch (TSS2_RC rc) {
+        std::stringstream msg;
+        msg << "加载外部密钥失败: TPM Command LoadExternal() has returned an error code 0x" << std::hex << rc;
+        throw std::runtime_error(msg.str());
+    } catch (...) {
+        throw std::runtime_error("加载外部密钥失败: Unknown error happened in TPM command LoadExternal()\n");
+    }
+
+    char buf[keyLen];
+    memset(buf, 0xFF, keyLen);
+    loadextn.configSensitiveDataBits(buf, keyLen); // 手动覆盖清除之前缓存的对称密钥值副本(清除敏感数据)
+
+    TPMS_AUTH_COMMAND *cmdAuths[3];
+    TSS2_SYS_CMD_AUTHS cmdAuthsArray;
+    TPMS_AUTH_COMMAND cmdAuthBlob;
+    cmdAuthBlob.sessionHandle = TPM_RS_PW;
+    cmdAuthBlob.nonce.t.size = 0;
+    cmdAuthBlob.sessionAttributes.val = 0x0;
+    const UINT16 MaxKeyPasswordLen = sizeof(cmdAuthBlob.hmac.t.buffer);
+    if (keyPasswordLen > MaxKeyPasswordLen) {
+        keyPasswordLen = MaxKeyPasswordLen;
+    }
+    cmdAuthBlob.hmac.t.size = keyPasswordLen;
+    if (keyPasswordLen > 0) {
+        memcpy(cmdAuthBlob.hmac.t.buffer, keyPassword, keyPasswordLen);
+    }
+    cmdAuths[0] = &cmdAuthBlob;
+    cmdAuths[1] = cmdAuths[2] = NULL;
+    cmdAuthsArray.cmdAuths = cmdAuths;
+    cmdAuthsArray.cmdAuthsCount = 1;
+
+    TPMS_AUTH_RESPONSE *rspAuths[3];
+    TSS2_SYS_RSP_AUTHS rspAuthsArray;
+    TPMS_AUTH_RESPONSE rspAuthBlob;
+    memset(&rspAuthBlob, 0x00, sizeof(rspAuthBlob));
+    rspAuths[0] = &rspAuthBlob;
+    rspAuths[1] = rspAuths[2] = NULL;
+    rspAuthsArray.rspAuths = rspAuths;
+    rspAuthsArray.rspAuthsCount = cmdAuthsArray.cmdAuthsCount;
+
+    m_savedAuthValueForSequenceHandle.t.size = 0; // TODO: 允许自定义HMAC流密码
+
+    TPMI_DH_OBJECT sequenceHandle = 0x0;
+
+    if (TPM_ALG_NULL == hashAlgorithm) {
+        // FIXME: 指定无效的算法编码可能导致出错
+    }
+
+    m_savedSequenceHandle = 0x0; // 方便调试
+    TPM_RC rc = Tss2_Sys_HMAC_Start(m_sysContext,
+            keyHandle, // IN
+            &cmdAuthsArray, // IN
+            &m_savedAuthValueForSequenceHandle, // IN
+            hashAlgorithm, // IN
+            &sequenceHandle, // OUT
+            &rspAuthsArray /* OUT */);
+    memset(&cmdAuthBlob, 0xFF, sizeof(cmdAuthBlob)); // 立即清除局部变量中缓存的密码
+    if (rc) {
+        std::stringstream msg;
+        msg << "HMACSequenceScheduler::start(): TPM Command Tss2_Sys_HMAC_Start() has returned an error code 0x" << std::hex << rc;
+        throw std::runtime_error(msg.str());
+    }
+    m_savedSequenceHandle = sequenceHandle;
+    m_cachedData.t.size = 0;
 }
