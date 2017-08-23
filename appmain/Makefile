@@ -1,7 +1,10 @@
 # Makefile for TPM 2.0 application main entrance
+EXEC_FILES += HMACTest/main
+EXEC_FILES += HashCalculatorClientTest/main
+EXEC_FILES += AESCalculatorClientTest/main
 
 .PHONY: default
-default: main
+default: $(EXEC_FILES)
 
 .PHONY: all
 all: default cscope tags
@@ -9,6 +12,7 @@ all: default cscope tags
 # PREFIX should be the same dir where TPM2.0-TSS libraries has been installed to
 PREFIX := /usr/local
 LOCAL_INCLUDE_DIRS := \
+	-I. \
     -I$(PREFIX)/include \
     -I$(PREFIX)/include/sapi \
     -I$(PREFIX)/include/tcti \
@@ -30,21 +34,20 @@ COMPILE_cpp = $(COMPILE.cpp)
 SRC_FILES := $(wildcard *.cpp)
 SRC_FILES_WITHOUT_SUFFIX = $(basename $(SRC_FILES))
 OBJ_FILES = $(patsubst %, %.o, $(SRC_FILES_WITHOUT_SUFFIX))
+INCLUDE_FILES := $(wildcard *.h)
 
 .PHONY: ALWAYS_REBUILD
-libplugin.a: ALWAYS_REBUILD
-	rm -f libplugin/$@
-	$(MAKE) -C libplugin PREFIX=$(PREFIX) $@
-	cp libplugin/$@ ./$@
-
-main.o: main.cpp TPMCommand.h TestCase.h
-	$(COMPILE_cpp) -o $@ $<
+libplugin/libplugin.a: ALWAYS_REBUILD
+	$(MAKE) -C libplugin PREFIX=$(PREFIX)
 
 TestCase.o: TestCase.cpp TestCase.h TPMCommand.h
 	$(COMPILE_cpp) -o $@ $<
 
-main: $(OBJ_FILES) libplugin.a
+%/main: %/main.o $(OBJ_FILES) libplugin/libplugin.a
 	$(CXX) $(LD_FLAGS) -o $@ $^ $(LIBS)
+
+%/main.o: %/main.cpp $(INCLUDE_FILES)
+	$(COMPILE_cpp) -o $@ $<
 
 %.o: %.c %.h
 	$(COMPILE_c) -o $@ $<
@@ -61,7 +64,7 @@ main: $(OBJ_FILES) libplugin.a
 .PHONY: clean
 clean:
 	$(MAKE) clean -C libplugin
-	$(RM) libplugin.a
+	$(RM) $(EXEC_FILES)
 	$(RM) *.o
 	$(RM) cscope.files cscope.out
 	$(RM) TAGS
