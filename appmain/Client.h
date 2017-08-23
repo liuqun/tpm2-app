@@ -18,7 +18,7 @@
 class ClientContextInitializer {
 public:
     /** 回调接口原型 */
-    virtual void initializerCallbackFunc(TSS2_TCTI_CONTEXT *tctiContext, size_t tctiContextSize, TSS2_SYS_CONTEXT *sysContext, size_t sysContextSize);
+    virtual void initializerCallbackFunc(TSS2_TCTI_CONTEXT *tctiContext, size_t tctiContextSize);
 };
 
 /// TPM客户端
@@ -138,7 +138,7 @@ public:
     /** 析构函数 */
     virtual ~SocketBasedClientContextInitializer();
     /** 回调接口 */
-    virtual void initializerCallbackFunc(TSS2_TCTI_CONTEXT *, size_t, TSS2_SYS_CONTEXT *, size_t);
+    virtual void initializerCallbackFunc(TSS2_TCTI_CONTEXT *tctiContext, size_t tctiContextSize);
 private:
     const char *m_hostname;
     uint16_t m_port;
@@ -152,7 +152,7 @@ public:
     /** 析构函数 */
     virtual ~DeviceBasedClientContextInitializer();
     /** 回调接口 */
-    virtual void initializerCallbackFunc(TSS2_TCTI_CONTEXT *, size_t, TSS2_SYS_CONTEXT *, size_t);
+    virtual void initializerCallbackFunc(TSS2_TCTI_CONTEXT *tctiContext, size_t tctiContextSize);
 private:
     const char *m_device;
 };

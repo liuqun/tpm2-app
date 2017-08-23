@@ -154,17 +154,34 @@ void Client::disconnect() {
 
 void Client::connect() {
     assert(m_contextInitializer);
-    m_contextInitializer->initializerCallbackFunc(m_tctiContext, m_tctiContextSize, m_sysContext, m_sysContextSize);
+    m_contextInitializer->initializerCallbackFunc(m_tctiContext, m_tctiContextSize);
+
+    TSS2_ABI_VERSION abiVersion;
+    abiVersion.tssCreator = TSSWG_INTEROP;
+    abiVersion.tssFamily = TSS_SAPI_FIRST_FAMILY;
+    abiVersion.tssLevel = TSS_SAPI_FIRST_LEVEL;
+    abiVersion.tssVersion = TSS_SAPI_FIRST_VERSION;
+
+    TSS2_RC err = 0;
+    err = Tss2_Sys_Initialize(
+            m_sysContext,
+            m_sysContextSize,
+            m_tctiContext,
+            &abiVersion);
+    if (err) {
+        fprintf(stderr, "Error: Tss2_Sys_Initialize() returns 0x%X\n", (int) err);
+        // TODO: throw/raise an expection to the up level
+    }
 }
 
 void Client::setContextInitializer(ClientContextInitializer& initializer) {
     m_contextInitializer = &initializer;
 }
 
-// 以下为 TCTI / System API 上下文初始化工具
+// 以下为 TCTI 上下文初始化工具
 
 // 回调函数原型 initializerCallbackFunc()
-void ClientContextInitializer::initializerCallbackFunc(TSS2_TCTI_CONTEXT *tctiContext, size_t tctiContextSize, TSS2_SYS_CONTEXT *sysContext, size_t sysContextSize)
+void ClientContextInitializer::initializerCallbackFunc(TSS2_TCTI_CONTEXT *tctiContext, size_t tctiContextSize)
 {
 }
 
@@ -185,7 +202,7 @@ SocketBasedClientContextInitializer::~SocketBasedClientContextInitializer()
 }
 
 // 回调函数 initializerCallbackFunc()
-void SocketBasedClientContextInitializer::initializerCallbackFunc(TSS2_TCTI_CONTEXT *tctiContext, size_t tctiContextSize, TSS2_SYS_CONTEXT *sysContext, size_t sysContextSize)
+void SocketBasedClientContextInitializer::initializerCallbackFunc(TSS2_TCTI_CONTEXT *tctiContext, size_t tctiContextSize)
 {
     TCTI_SOCKET_CONF conf;
     conf.hostname = (const char *) m_hostname;
@@ -198,23 +215,6 @@ void SocketBasedClientContextInitializer::initializerCallbackFunc(TSS2_TCTI_CONT
     tctiError = InitSocketTcti(tctiContext, &tctiContextSize, &conf, 0);
     if (tctiError) {
         fprintf(stderr, "Error: InitSocketTcti() returns 0x%X\n", (int) tctiError);
-        // TODO: throw/raise an expection to the up level
-    }
-
-    TSS2_ABI_VERSION abiVersion;
-    abiVersion.tssCreator = TSSWG_INTEROP;
-    abiVersion.tssFamily = TSS_SAPI_FIRST_FAMILY;
-    abiVersion.tssLevel = TSS_SAPI_FIRST_LEVEL;
-    abiVersion.tssVersion = TSS_SAPI_FIRST_VERSION;
-
-    TSS2_RC sapiError;
-    sapiError = Tss2_Sys_Initialize(
-            sysContext,
-            sysContextSize,
-            tctiContext,
-            &abiVersion);
-    if (sapiError) {
-        fprintf(stderr, "Error: Tss2_Sys_Initialize() returns 0x%X\n", (int) sapiError);
         // TODO: throw/raise an expection to the up level
     }
 }
@@ -235,7 +235,7 @@ DeviceBasedClientContextInitializer::~DeviceBasedClientContextInitializer()
 }
 
 // 回调函数 initializerCallbackFunc()
-void DeviceBasedClientContextInitializer::initializerCallbackFunc(TSS2_TCTI_CONTEXT *tctiContext, size_t tctiContextSize, TSS2_SYS_CONTEXT *sysContext, size_t sysContextSize)
+void DeviceBasedClientContextInitializer::initializerCallbackFunc(TSS2_TCTI_CONTEXT *tctiContext, size_t tctiContextSize)
 {
     TCTI_DEVICE_CONF conf;
     conf.device_path = (const char *) m_device;
@@ -246,23 +246,6 @@ void DeviceBasedClientContextInitializer::initializerCallbackFunc(TSS2_TCTI_CONT
     tctiError = InitDeviceTcti(tctiContext, &tctiContextSize, &conf);
     if (tctiError) {
         fprintf(stderr, "Error: InitSocketTcti() returns 0x%X\n", (int) tctiError);
-        // TODO: throw/raise an expection to the up level
-    }
-
-    TSS2_ABI_VERSION abiVersion;
-    abiVersion.tssCreator = TSSWG_INTEROP;
-    abiVersion.tssFamily = TSS_SAPI_FIRST_FAMILY;
-    abiVersion.tssLevel = TSS_SAPI_FIRST_LEVEL;
-    abiVersion.tssVersion = TSS_SAPI_FIRST_VERSION;
-
-    TSS2_RC sapiError;
-    sapiError = Tss2_Sys_Initialize(
-            sysContext,
-            sysContextSize,
-            tctiContext,
-            &abiVersion);
-    if (sapiError) {
-        fprintf(stderr, "Error: Tss2_Sys_Initialize() returns 0x%X\n", (int) sapiError);
         // TODO: throw/raise an expection to the up level
     }
 }
