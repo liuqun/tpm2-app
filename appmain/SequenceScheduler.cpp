@@ -188,10 +188,12 @@ void HMACSequenceScheduler::inputData(const void *data_, unsigned int length) {
             msg << "HMACSequenceScheduler::inputData(): TPM Command Tss2_Sys_SequenceUpdate() has returned an error code 0x" << std::hex << err;
             throw runtime_error(msg.str());
         }
-        memcpy(m_cachedData.t.buffer, data, MaxBufferSize);
-        m_cachedData.t.size = MaxBufferSize;
-        data += MaxBufferSize;
         length -= MaxBufferSize;
+        if (length >= MaxBufferSize) {
+            memcpy(m_cachedData.t.buffer, data, MaxBufferSize);
+            m_cachedData.t.size = MaxBufferSize;
+            data += MaxBufferSize;
+        }
     }
     if (length > 0) { // 缓存最后余留的数据(不足1024字节), 留待下轮凑满1024字节后再发送
         memcpy(m_cachedData.t.buffer, data, length);
