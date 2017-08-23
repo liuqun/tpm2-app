@@ -157,5 +157,51 @@ private:
     const char *m_device;
 };
 
+class HashSequenceScheduler: public SequenceScheduler
+{
+public:
+    HashSequenceScheduler();
+    ~HashSequenceScheduler();
+
+    /// 开启Hash计算序列
+    ///
+    /// @param hashAlgorithm TPM2.0 哈希算法编号. 遇到无效的哈希算法编号则尝试使用keyHandle密钥中的指定的哈希算法
+    /// @throws std::exception 通过 std::exception::what() 描述错误原因
+    void start(TPMI_ALG_HASH hashAlgorithm);
+
+    /// 序列输入下一个数据包
+    ///
+    /// @param data
+    /// @param length
+    /// @throws std::exception 通过 std::exception::what() 描述错误原因
+    void inputData(const void *data, unsigned int length);
+
+    /// 结束当前Hash计算序列, 取回计算结果后存储在类成员变量中
+    ///
+    /// @throws std::exception 通过 std::exception::what() 描述错误原因
+    void complete();
+
+    /// 输出哈希摘要
+    ///
+    /// @return TPM2B_DIGEST 结构体引用
+    const TPM2B_DIGEST& outDigest();
+
+    /// 输出凭证
+    ///
+    /// @return TPMT_TK_HASHCHECK 结构体引用
+    const TPMT_TK_HASHCHECK& outValidationTicket();
+
+private:
+    TPM2B_DIGEST m_hashDigest;///< 存储最终HMAC结果
+private:
+    TPMT_TK_HASHCHECK m_validationTicket;///< 存储本次计算是由TPM完成的校验凭证
+private:
+    TPM2B_MAX_BUFFER m_cachedData;///< 预留缓存区, 提高IO效率
+private:
+    TPMI_DH_OBJECT m_savedSequenceHandle;
+private:
+    TPM2B_AUTH m_savedAuthValueForSequenceHandle;
+};
+
 #endif // __cplusplus
 #endif // CLIENT_H_

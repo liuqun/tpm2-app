@@ -258,3 +258,180 @@ void HMACSequenceScheduler::start(TPMI_ALG_HASH hashAlgorithm, const void *key, 
     m_savedSequenceHandle = sequenceHandle;
     m_cachedData.t.size = 0;
 }
+
+/* 【下列代码实现Hash序列调度器接口】 */
+
+// Hash序列调度器 -- 构造函数
+HashSequenceScheduler::HashSequenceScheduler() {
+    m_savedAuthValueForSequenceHandle.t.size = 0;
+    m_savedSequenceHandle = 0x0;
+    m_cachedData.t.size = 0;
+    m_hashDigest.t.size = 0;
+    m_validationTicket.tag = 0;
+}
+
+// Hash序列调度器 -- 析构函数
+HashSequenceScheduler::~HashSequenceScheduler() {
+    // 擦除缓存的明文数据
+    memset(&m_cachedData, 0xFF, sizeof(m_cachedData));
+}
+
+// Hash序列调度器 -- 子函数 start(). (功能描述参见头文件中的定义)
+void HashSequenceScheduler::start(TPMI_ALG_HASH hashAlgorithm) {
+    TPMI_DH_OBJECT sequenceHandle; // 与类成员变量m_savedSequenceHandle保持一致
+
+    if (TPM_ALG_NULL == hashAlgorithm) {
+        // FIXME: Warning: 当调用者指定算法编码 algorithm=0x0010 (即 TPM_ALG_NULL) 时, TPM 会将该序列初始化成一个 EventSequence (事件序列), 而非普通哈希序列
+    }
+
+    sequenceHandle = 0x0; // 方便调试
+    m_savedAuthValueForSequenceHandle.t.size = 0; // TODO: 允许自定义HashSequence密码
+    TPM_RC rc = Tss2_Sys_HashSequenceStart(m_sysContext,
+            (TSS2_SYS_CMD_AUTHS const *) NULL, // IN
+            &m_savedAuthValueForSequenceHandle, // IN
+            hashAlgorithm, // IN
+            &sequenceHandle, // OUT
+            (TSS2_SYS_RSP_AUTHS *) NULL /* OUT */);
+    if (rc) {
+        std::stringstream msg;
+        msg << "HashSequenceScheduler::start(): TPM Command Tss2_Sys_HashSequenceStart() has returned an error code 0x" << std::hex << rc;
+        throw std::runtime_error(msg.str());
+    }
+    m_savedSequenceHandle = sequenceHandle;
+    m_cachedData.t.size = 0;
+}
+
+//  Hash序列调度器 -- 子函数 inputData(). (功能描述参见头文件中的定义)
+void HashSequenceScheduler::inputData(const void *data_, unsigned int length) {
+    if (!m_savedSequenceHandle) {
+        throw std::runtime_error("HashSequenceScheduler::inputData(): 函数调用次序错误, 请先调用start()");
+    }
+
+    TPMS_AUTH_COMMAND *cmdAuths[3];
+    TSS2_SYS_CMD_AUTHS cmdAuthsArray;
+    TPMS_AUTH_COMMAND cmdAuthBlob;
+    cmdAuthBlob.sessionHandle = TPM_RS_PW;
+    cmdAuthBlob.nonce.t.size = 0;
+    cmdAuthBlob.sessionAttributes.val = 0x0;
+    cmdAuthBlob.hmac = m_savedAuthValueForSequenceHandle; // 密码
+    cmdAuths[0] = &cmdAuthBlob;
+    cmdAuths[1] = cmdAuths[2] = NULL;
+    cmdAuthsArray.cmdAuths = cmdAuths;
+    cmdAuthsArray.cmdAuthsCount = 1;
+
+    TPMS_AUTH_RESPONSE *rspAuths[3];
+    TSS2_SYS_RSP_AUTHS rspAuthsArray;
+    TPMS_AUTH_RESPONSE rspAuthBlob;
+    memset(&rspAuthBlob, 0x00, sizeof(rspAuthBlob));
+    rspAuths[0] = &rspAuthBlob;
+    rspAuths[1] = rspAuths[2] = NULL;
+    rspAuthsArray.rspAuths = rspAuths;
+    rspAuthsArray.rspAuthsCount = cmdAuthsArray.cmdAuthsCount;
+
+    const BYTE *data = (const BYTE *) data_;
+
+    const size_t MaxBufferSize = sizeof(m_cachedData.t.buffer);
+    const size_t leftBufferSize = MaxBufferSize - m_cachedData.t.size;
+
+    size_t n;
+    n = length;
+    if (length > leftBufferSize) {
+        n = leftBufferSize;
+    }
+    memcpy(m_cachedData.t.buffer+m_cachedData.t.size, data, n);
+    m_cachedData.t.size += n;
+    data += n;
+    length -= n;
+    if (m_cachedData.t.size < MaxBufferSize) {
+        // 发现尚未凑满一个1024字节数据包, 所以此时不必发送任何数据
+        return;
+    }
+
+    length = length + m_cachedData.t.size;
+    while (length >= MaxBufferSize) { // 每轮发送1024字节
+        printf("调试信息: length=%d\n", length);
+        printf("调试信息: m_cachedData.t.size=%d\n", m_cachedData.t.size);
+        TPM_RC err = 0;
+        err = Tss2_Sys_SequenceUpdate(m_sysContext,
+                m_savedSequenceHandle, // OUT
+                &cmdAuthsArray, // IN
+                &m_cachedData, // IN
+                &rspAuthsArray /* OUT */);
+        if (err) {
+            std::stringstream msg;
+            msg << "HashSequenceScheduler::inputData(): TPM Command Tss2_Sys_SequenceUpdate() has returned an error code 0x" << std::hex << err;
+            throw std::runtime_error(msg.str());
+        }
+        length -= MaxBufferSize;
+        if (length >= MaxBufferSize)
+        {
+            memcpy(m_cachedData.t.buffer, data, MaxBufferSize);
+            m_cachedData.t.size = MaxBufferSize;
+            data += MaxBufferSize;
+        }
+    }
+    if (length > 0) { // 缓存最后余留的数据(不足1024字节), 留待下轮凑满1024字节后再发送
+        memcpy(m_cachedData.t.buffer, data, length);
+    }
+    m_cachedData.t.size = (UINT16) length;
+    printf("调试信息: length=%d\n", length);
+}
+
+// Hash序列调度器 -- 子函数 outDigest(). (功能描述参见头文件中的定义)
+const TPM2B_DIGEST& HashSequenceScheduler::outDigest() {
+    return m_hashDigest;
+}
+
+// Hash序列调度器 -- 子函数 outValidationTicket(). (功能描述参见头文件中的定义)
+const TPMT_TK_HASHCHECK& HashSequenceScheduler::outValidationTicket() {
+    return m_validationTicket;
+}
+
+// Hash序列调度器 -- 子函数 complete(). (功能描述参见头文件中的定义)
+void HashSequenceScheduler::complete() {
+    if (!m_savedSequenceHandle) {
+        throw std::runtime_error("HashSequenceScheduler::complete(): 函数调用次序错误, 请先调用start()");
+    }
+
+    TPMS_AUTH_COMMAND *cmdAuths[3];
+    TSS2_SYS_CMD_AUTHS cmdAuthsArray;
+    TPMS_AUTH_COMMAND cmdAuthBlob;
+    cmdAuthBlob.sessionHandle = TPM_RS_PW;
+    cmdAuthBlob.nonce.t.size = 0;
+    cmdAuthBlob.sessionAttributes.val = 0x0;
+    cmdAuthBlob.hmac = m_savedAuthValueForSequenceHandle; // 密码
+    cmdAuths[0] = &cmdAuthBlob;
+    cmdAuths[1] = cmdAuths[2] = NULL;
+    cmdAuthsArray.cmdAuths = cmdAuths;
+    cmdAuthsArray.cmdAuthsCount = 1;
+
+    TPMS_AUTH_RESPONSE *rspAuths[3];
+    TSS2_SYS_RSP_AUTHS rspAuthsArray;
+    TPMS_AUTH_RESPONSE rspAuthBlob;
+    memset(&rspAuthBlob, 0x00, sizeof(rspAuthBlob));
+    rspAuths[0] = &rspAuthBlob;
+    rspAuths[1] = rspAuths[2] = NULL;
+    rspAuthsArray.rspAuths = rspAuths;
+    rspAuthsArray.rspAuthsCount = cmdAuthsArray.cmdAuthsCount;
+
+    TPMI_RH_HIERARCHY hierarchy;
+    hierarchy = TPM_RH_NULL; // TODO: 应该允许用户自定义修改validationTicket的hierarchy
+
+    m_hashDigest.t.size = sizeof(m_hashDigest.t.buffer);
+
+    printf("调试信息: m_cachedData.t.size=%d\n", m_cachedData.t.size);
+    TPM_RC err = 0;
+    err = Tss2_Sys_SequenceComplete(m_sysContext,
+            m_savedSequenceHandle, // IN
+            &cmdAuthsArray, // IN
+            &m_cachedData, // IN
+            hierarchy, // IN
+            &m_hashDigest, // OUT
+            &m_validationTicket, // OUT
+            &rspAuthsArray); //
+    if (err) {
+        std::stringstream msg;
+        msg << "HashSequenceScheduler::complete(): TPM Command Tss2_Sys_SequenceComplete() has returned an error code 0x" << std::hex << err;
+        throw std::runtime_error(msg.str());
+    }
+}
