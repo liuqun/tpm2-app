@@ -59,6 +59,8 @@ size_t GetMaxTctiContextSize() {
     return (max);
 }
 
+static SocketBasedClientContextInitializer DefaultTctiContextInitializer("127.0.0.1", 2321);
+
 Client::Client() {
     m_tctiContextSize = GetMaxTctiContextSize();
     m_tctiContext = (TSS2_TCTI_CONTEXT *) malloc(m_tctiContextSize);
@@ -78,7 +80,7 @@ Client::Client() {
     }
     memset(m_sysContext, 0x00, m_sysContextSize);
     m_pLastCommand = NULL;
-    m_contextInitializer = NULL;
+    m_contextInitializer = &DefaultTctiContextInitializer;
 }
 
 Client::~Client() {
