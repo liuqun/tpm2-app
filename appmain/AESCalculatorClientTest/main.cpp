@@ -90,10 +90,10 @@ int main(int argc, char *argv[])
         // 如果不指定命令行参数, 则会直接连接到本机 IP 地址默认端口上运行的资源管理器
     }
 
-    SocketBasedClientContextInitializer socketTCTIContextInitializer(hostname, port);
-    DeviceBasedClientContextInitializer deviceTCTIContextInitializer(deviceFile);
+    SocketBasedTSSContextInitializer socketTCTIContextInitializer(hostname, port);
+    DeviceBasedTSSContextInitializer deviceTCTIContextInitializer(deviceFile);
 
-    ClientContextInitializer *pInitializer; ///< 通过指针选择使用哪一个上下文初始化器
+    TSSContextInitializer *pInitializer; ///< 通过指针选择使用哪一个上下文初始化器
 
     pInitializer = &socketTCTIContextInitializer;
     if (usingDeviceFile)
@@ -409,12 +409,13 @@ int main(int argc, char *argv[])
         }
     };
 
+    pInitializer->connect();
+
     try
     {
         AESCalculatorClient client;
 
-        client.setContextInitializer(*pInitializer);
-        client.connect();
+        client.initialize(*pInitializer);
 
         const char *Data = "Hi There";
         const uint16_t nDataLen = strlen(Data);
@@ -446,12 +447,14 @@ int main(int argc, char *argv[])
             printf("%c", (BYTE) *j);
         }
         printf("\n");
-        client.disconnect();
     }
     catch (std::exception& err)
     {
         fprintf(stderr, "Error: %s\n", err.what());
         PrintHelp();
     }
+
+    pInitializer->disconnect();
+
     return (0);
 }

@@ -90,20 +90,20 @@ int main(int argc, char *argv[])
         // 如果不指定命令行参数, 则会直接连接到本机 IP 地址默认端口上运行的资源管理器
     }
 
-    SocketBasedClientContextInitializer socketTCTIContextInitializer(hostname, port);
-    DeviceBasedClientContextInitializer deviceTCTIContextInitializer(deviceFile);
+    SocketBasedTSSContextInitializer socketTCTIContextInitializer(hostname, port);
+    DeviceBasedTSSContextInitializer deviceTCTIContextInitializer(deviceFile);
 
-    ClientContextInitializer *pInitializer; ///< 通过指针选择使用哪一个上下文初始化器
+    TSSContextInitializer *pInitializer; ///< 通过指针选择使用哪一个上下文初始化器
 
     pInitializer = &socketTCTIContextInitializer; // 默认优先使用socket TCTI 连接2323端口上的resourcemgr或2321端口上的Simulator
     if (usingDeviceFile)
     {
         pInitializer = &deviceTCTIContextInitializer;
     }
+    pInitializer->connect();
 
     HashCalculatorClient client;
-    client.setContextInitializer(*pInitializer);
-    client.connect();
+    client.initialize(*pInitializer);
     /* 第一组测试数据 */
     {
         const char *szMsg = "abc";
@@ -134,7 +134,8 @@ int main(int argc, char *argv[])
             printf("\n");
         }
     }
-    client.disconnect();
+
+    pInitializer->disconnect();
 
     return (0);
 }

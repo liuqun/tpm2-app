@@ -90,26 +90,24 @@ int main(int argc, char *argv[])
         // 如果不指定命令行参数, 则会直接连接到本机 IP 地址默认端口上运行的资源管理器
     }
 
-    SocketBasedClientContextInitializer socketTCTIContextInitializer(hostname, port);
-    DeviceBasedClientContextInitializer deviceTCTIContextInitializer(deviceFile);
+    SocketBasedTSSContextInitializer socketTSSContextInitializer(hostname, port);
+    DeviceBasedTSSContextInitializer deviceTSSContextInitializer(deviceFile);
 
-    ClientContextInitializer *pInitializer; ///< 通过指针选择使用哪一个上下文初始化器
+    TSSContextInitializer *pInitializer; ///< 通过指针选择使用哪一个上下文初始化器
 
-    pInitializer = &socketTCTIContextInitializer;
+    pInitializer = &socketTSSContextInitializer; // 默认优先使用socket连接(2323端口上的resourcemgr或2321端口上的Simulator)
     if (usingDeviceFile)
     {
-        pInitializer = &deviceTCTIContextInitializer;
+        pInitializer = &deviceTSSContextInitializer;
     }
+    pInitializer->connect();
 
     /* HMAC 测试 */
     {
         HMACCalculatorClient client;
-        client.setContextInitializer(*pInitializer);
-
+        client.initialize(*pInitializer);
         try
         {
-            client.connect();
-
             // 一组 HMAC-SHA-1 测试数据, 来自 https://tools.ietf.org/html/rfc2202#section-3
             const char *Data = "Hi There";
             const uint16_t nDataLen = strlen(Data);
@@ -143,8 +141,6 @@ int main(int argc, char *argv[])
                 }
                 printf("\n");
             }
-
-            client.disconnect();
         }
         catch (std::exception& err)
         {
@@ -154,8 +150,6 @@ int main(int argc, char *argv[])
 
         try
         {
-            client.connect();
-
             // 一组 HMAC-SHA-256 测试数据, 来自https://tools.ietf.org/html/rfc4231#section-4
             const char *Data = "Hi There";
             const uint16_t nDataLen = strlen(Data);
@@ -189,8 +183,6 @@ int main(int argc, char *argv[])
                 }
                 printf("\n");
             }
-
-            client.disconnect();
         }
         catch (std::exception& err)
         {
@@ -202,11 +194,9 @@ int main(int argc, char *argv[])
     /* HMAC 多桢序列测试 */
     {
         HMACSequenceScheduler scheduler;
-        scheduler.setContextInitializer(*pInitializer);
+        scheduler.initialize(*pInitializer);
         try
         {
-            scheduler.connect();
-
             // 一组 HMAC-SHA-1 测试数据, 来自 https://tools.ietf.org/html/rfc2202#section-3
             const char *Data = "Hi There";
             const uint16_t nDataLen = strlen(Data);
@@ -240,7 +230,6 @@ int main(int argc, char *argv[])
                 }
                 printf("\n");
             }
-            scheduler.disconnect();
         }
         catch (std::exception& err)
         {
@@ -250,8 +239,6 @@ int main(int argc, char *argv[])
 
         try
         {
-            scheduler.connect();
-
             // 一组 HMAC-SHA-256 测试数据, 来自https://tools.ietf.org/html/rfc4231#section-4
             const char *Data = "Hi There";
             const uint16_t nDataLen = strlen(Data);
@@ -285,7 +272,6 @@ int main(int argc, char *argv[])
                 }
                 printf("\n");
             }
-            scheduler.disconnect();
         }
         catch (std::exception& err)
         {
@@ -297,7 +283,7 @@ int main(int argc, char *argv[])
     /* 哈希摘要(SHA1/256)多桢序列测试 */
     {
         HashSequenceScheduler scheduler;
-        scheduler.setContextInitializer(*pInitializer);
+        scheduler.initialize(*pInitializer);
         const BYTE Data[] = // 下列测试用例取自 tpmclient 中的 TestHash() 函数
         {
             0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
@@ -378,7 +364,6 @@ int main(int argc, char *argv[])
         printf("SHA1输入数据总长度: %d字节\n", nDataLength);
         try
         {
-            scheduler.connect();
             scheduler.start(TPM_ALG_SHA1);
             scheduler.inputData(Data, nDataLength);
             scheduler.complete();
@@ -399,7 +384,6 @@ int main(int argc, char *argv[])
                     printf("哈希摘要正确\n");
                 }
             }
-            scheduler.disconnect();
         }
         catch (std::exception& err)
         {
@@ -407,6 +391,8 @@ int main(int argc, char *argv[])
             PrintHelp();
         }
     }
+
+    pInitializer->disconnect();
 
     return (0);
 }
