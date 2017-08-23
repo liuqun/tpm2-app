@@ -11,39 +11,24 @@
 
 #include <sapi/tpm20.h>
 #include "TPMCommand.h"
+#include "TSSContextInitializer.h"
 
 #ifdef __cplusplus
-
-/// 上下文初始化工具抽象基类: 仅声明一个回调函数接口原型 initializerCallbackFunc(), 由她的子类去集成实现该接口.
-class ClientContextInitializer {
-public:
-    /** 回调接口原型 */
-    virtual void initializerCallbackFunc(TSS2_TCTI_CONTEXT *tctiContext, size_t tctiContextSize);
-};
 
 /// TPM客户端
 class Client
 {
 private:
-    ClientContextInitializer *m_contextInitializer; ///<
-    TSS2_TCTI_CONTEXT *m_tctiContext; ///< 成员变量 m_tctiContext (取代全局变量 tctiContext, 降低耦合度).
-    size_t m_tctiContextSize;
     size_t m_sysContextSize;
 
 public:
     TSS2_SYS_CONTEXT *m_sysContext; ///< 成员变量 m_sysContext (取代全局变量 sysContext, 降低耦合度).
     /** 构造函数 */
     Client();
+    /** 客户端初始化 */
+    void initialize(TSSContextInitializer& initializer);
     /** 析构函数 */
     virtual ~Client();
-    /** 指定外部回调函数, 并使用该回调函数执行 TCTI / System API 上下文对象初始化 */
-    void setContextInitializer(ClientContextInitializer& initializer);
-    /**
-     * 与TPM2.0设备或本地Simulator模拟器守护进程建立连接
-     *
-     * 之前指定的上下文初始化
-     */
-    void connect();
     /** 发送命令帧 */
     void sendCommand(
             TPMCommand& command ///< 输入参数. 此TPMCommand对象自带buildCmdPacket()组帧方法生成命令帧报文
@@ -63,14 +48,6 @@ public:
     void sendCommandAndWaitUntilResponseIsFetched(
             TPMCommand& cmd ///< 输入参数. 此TPMCommand对象自带buildCmdPacket()组帧方法生成命令帧报文
             );
-    /**
-     * 切断与守护进程之间的通讯连接
-     *
-     * @details
-     * 优雅地切断之前建立的任意 socket 连接(通常是与 TSS resource manager 守护进程之间的链接)
-     * 底层调用 shutdown() 通知socket服务器端正常结束会话连接(connection), 然后调用 closesocket() 关闭本地套接字.
-     */
-    void disconnect();
 
 private:
     TPMCommand *m_pLastCommand; ///< 内部成员变量. m_pLastCommand总是指向之前最后一次调用sendCommand()成员函数时的关联的TPMCommand参数的内存地址
@@ -128,33 +105,6 @@ private:
     TPMI_DH_OBJECT m_savedSequenceHandle;
 private:
     TPM2B_AUTH m_savedAuthValueForSequenceHandle;
-};
-
-/// 基于 TCP 套接字的 TCTI / System API 初始化工具
-class SocketBasedClientContextInitializer: public ClientContextInitializer {
-public:
-    /** 构造函数 */
-    SocketBasedClientContextInitializer(const char *hostname="127.0.0.1", uint16_t port=2321);
-    /** 析构函数 */
-    virtual ~SocketBasedClientContextInitializer();
-    /** 回调接口 */
-    virtual void initializerCallbackFunc(TSS2_TCTI_CONTEXT *tctiContext, size_t tctiContextSize);
-private:
-    const char *m_hostname;
-    uint16_t m_port;
-};
-
-/// 直接读写 /dev/tpm0 设备的 TCTI / System API 初始化工具
-class DeviceBasedClientContextInitializer: public ClientContextInitializer {
-public:
-    /** 构造函数 */
-    DeviceBasedClientContextInitializer(const char *device="/dev/tpm0");
-    /** 析构函数 */
-    virtual ~DeviceBasedClientContextInitializer();
-    /** 回调接口 */
-    virtual void initializerCallbackFunc(TSS2_TCTI_CONTEXT *tctiContext, size_t tctiContextSize);
-private:
-    const char *m_device;
 };
 
 class HashSequenceScheduler: public SequenceScheduler
