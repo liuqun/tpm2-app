@@ -5,7 +5,7 @@
 #include <vector>
 using std::vector;
 #include <sstream>
-using std::stringstream;
+using std::ostringstream;
 #include <stdexcept>
 using std::runtime_error;
 #include "CalculatorClient.h"
@@ -25,7 +25,7 @@ const vector<unsigned char>& HashCalculatorClient::SHA256(const void *data, // �
         const TPM2B_DIGEST &outHash = hashCmd.outHash();
         m_digest.assign(outHash.t.buffer, outHash.t.buffer+outHash.t.size);
     } catch (...) {
-        std::stringstream msg;
+        std::ostringstream msg;
         msg << "An unknown error was detected from " << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__;
         throw std::runtime_error(msg.str());
     }
@@ -46,7 +46,7 @@ const vector<unsigned char>& HashCalculatorClient::SHA1(const void *data, // 指
         const TPM2B_DIGEST &outHash = hashCmd.outHash();
         m_digest.assign(outHash.t.buffer, outHash.t.buffer+outHash.t.size);
     } catch (...) {
-        std::stringstream msg;
+        std::ostringstream msg;
         msg << "An unknown error was detected from " << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__;
         throw std::runtime_error(msg.str());
     }
@@ -130,7 +130,7 @@ static void RunHMACCalcProgram(
             const TPM2B_DIGEST& result = hmac.outHMAC();
             outResult.assign(result.t.buffer, result.t.buffer+result.t.size);
         } catch (TSS2_RC rc) {
-            std::stringstream msg;
+            std::ostringstream msg;
             msg << "TPM Command HMAC() has returned an error code 0x" << std::hex << rc;
             throw std::runtime_error(msg.str());
         } catch (...) {
@@ -141,7 +141,7 @@ static void RunHMACCalcProgram(
         TPMCommands::FlushLoadedKeyNode flush;
         TPM_HANDLE h = loadextn.outObjectHandle();
         if ((TPM_RH_NULL == hierarchy) && (h & 0xFF000000) != 0x80000000) {
-            std::stringstream msg;
+            std::ostringstream msg;
             msg << "Unexpected TPM HANDLE h=0x" << std::hex << (int)h << ", under hierarchy=0x" << (int)hierarchy;
             throw std::runtime_error(msg.str());
         }
@@ -151,11 +151,11 @@ static void RunHMACCalcProgram(
         client.fetchResponse();
         printf("节点删除完毕\n");
     } catch (TSS2_RC rc) {
-        std::stringstream msg;
+        std::ostringstream msg;
         msg << "TPM Command LoadExternal() has returned an error code 0x" << std::hex << rc;
         throw std::runtime_error(msg.str());
     } catch (std::exception& e) {
-        std::stringstream msg;
+        std::ostringstream msg;
         msg << "TPM Command FlushContext(): An error happened: " << e.what();
         throw std::runtime_error(msg.str());
     } catch (...) {

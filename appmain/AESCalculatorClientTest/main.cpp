@@ -35,7 +35,7 @@ using std::vector;
 #include <string>
 using std::string;
 #include <sstream>
-using std::stringstream;
+using std::ostringstream;
 #include <stdexcept>
 using std::exception;
 using std::runtime_error;
@@ -128,7 +128,7 @@ int main(int argc, char *argv[])
 
             if (nDatalength > MAX_INPUT_DATA_LENGTH_IN_BYTES)
             {
-                std::stringstream msg;
+                std::ostringstream msg;
                 msg << "Error: 单个输入数据包最大长度不能超过" << MAX_INPUT_DATA_LENGTH_IN_BYTES << "字节";
                 throw std::runtime_error(msg.str());
             }
@@ -237,7 +237,7 @@ int main(int argc, char *argv[])
                 TPMCommands::FlushLoadedKeyNode flush;
                 TPM_HANDLE h = loadextn.outObjectHandle();
                 if ((TPM_RH_NULL == hierarchy) && (h & 0xFF000000) != 0x80000000) {
-                    std::stringstream msg;
+                    std::ostringstream msg;
                     msg << "Unexpected TPM HANDLE h=0x" << std::hex << (int)h << ", under hierarchy=0x" << (int)hierarchy;
                     throw std::runtime_error(msg.str());
                 }
@@ -247,11 +247,11 @@ int main(int argc, char *argv[])
                 fetchResponse();
                 printf("节点删除完毕\n");
             } catch (TSS2_RC rc) {
-                std::stringstream msg;
+                std::ostringstream msg;
                 msg << "TPM Command LoadExternal() has returned an error code 0x" << std::hex << rc;
                 throw std::runtime_error(msg.str());
             } catch (std::exception& e) {
-                std::stringstream msg;
+                std::ostringstream msg;
                 msg << "TPM Command FlushContext(): An error happened: " << e.what();
                 throw std::runtime_error(msg.str());
             } catch (...) {
@@ -274,7 +274,7 @@ int main(int argc, char *argv[])
 
             if (nDatalength > MAX_INPUT_DATA_LENGTH_IN_BYTES)
             {
-                std::stringstream msg;
+                std::ostringstream msg;
                 msg << "Error: 单个输入数据包最大长度不能超过" << MAX_INPUT_DATA_LENGTH_IN_BYTES << "字节";
                 throw std::runtime_error(msg.str());
             }
@@ -383,7 +383,7 @@ int main(int argc, char *argv[])
                 TPMCommands::FlushLoadedKeyNode flush;
                 TPM_HANDLE h = loadextn.outObjectHandle();
                 if ((TPM_RH_NULL == hierarchy) && (h & 0xFF000000) != 0x80000000) {
-                    std::stringstream msg;
+                    std::ostringstream msg;
                     msg << "Unexpected TPM HANDLE h=0x" << std::hex << (int)h << ", under hierarchy=0x" << (int)hierarchy;
                     throw std::runtime_error(msg.str());
                 }
@@ -393,11 +393,11 @@ int main(int argc, char *argv[])
                 fetchResponse();
                 printf("节点删除完毕\n");
             } catch (TSS2_RC rc) {
-                std::stringstream msg;
+                std::ostringstream msg;
                 msg << "TPM Command LoadExternal() has returned an error code 0x" << std::hex << rc;
                 throw std::runtime_error(msg.str());
             } catch (std::exception& e) {
-                std::stringstream msg;
+                std::ostringstream msg;
                 msg << "TPM Command FlushContext(): An error happened: " << e.what();
                 throw std::runtime_error(msg.str());
             } catch (...) {

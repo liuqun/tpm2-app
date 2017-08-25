@@ -3,7 +3,7 @@
 // All rights reserved.
 
 #include <sstream>
-using std::stringstream;
+using std::ostringstream;
 #include <stdexcept>
 using std::runtime_error;
 #include <sapi/tpm20.h>
@@ -102,7 +102,7 @@ void HMACSequenceScheduler::inputData(const void *data_, unsigned int length) {
                 &m_cachedData, // IN
                 &rspAuthsArray /* OUT */);
         if (err) {
-            std::stringstream msg;
+            std::ostringstream msg;
             msg << "HMACSequenceScheduler::inputData(): TPM Command Tss2_Sys_SequenceUpdate() has returned an error code 0x" << std::hex << err;
             throw runtime_error(msg.str());
         }
@@ -171,7 +171,7 @@ void HMACSequenceScheduler::complete() {
             &m_validationTicket, // OUT
             &rspAuthsArray); //
     if (err) {
-        std::stringstream msg;
+        std::ostringstream msg;
         msg << "HMACSequenceScheduler::complete(): TPM Command Tss2_Sys_SequenceComplete() has returned an error code 0x" << std::hex << err;
         throw runtime_error(msg.str());
     }
@@ -194,7 +194,7 @@ void HMACSequenceScheduler::start(TPMI_ALG_HASH hashAlgorithm, const void *key, 
         printf("临时节点创建成功, 密钥句柄=0x%08X\n", (int)loadextn.outObjectHandle());
         keyHandle = loadextn.outObjectHandle();
     } catch (TSS2_RC rc) {
-        std::stringstream msg;
+        std::ostringstream msg;
         msg << "加载外部密钥失败: TPM Command LoadExternal() has returned an error code 0x" << std::hex << rc;
         throw std::runtime_error(msg.str());
     } catch (...) {
@@ -251,7 +251,7 @@ void HMACSequenceScheduler::start(TPMI_ALG_HASH hashAlgorithm, const void *key, 
             &rspAuthsArray /* OUT */);
     memset(&cmdAuthBlob, 0xFF, sizeof(cmdAuthBlob)); // 立即清除局部变量中缓存的密码
     if (rc) {
-        std::stringstream msg;
+        std::ostringstream msg;
         msg << "HMACSequenceScheduler::start(): TPM Command Tss2_Sys_HMAC_Start() has returned an error code 0x" << std::hex << rc;
         throw std::runtime_error(msg.str());
     }
@@ -293,7 +293,7 @@ void HashSequenceScheduler::start(TPMI_ALG_HASH hashAlgorithm) {
             &sequenceHandle, // OUT
             (TSS2_SYS_RSP_AUTHS *) NULL /* OUT */);
     if (rc) {
-        std::stringstream msg;
+        std::ostringstream msg;
         msg << "HashSequenceScheduler::start(): TPM Command Tss2_Sys_HashSequenceStart() has returned an error code 0x" << std::hex << rc;
         throw std::runtime_error(msg.str());
     }
@@ -358,7 +358,7 @@ void HashSequenceScheduler::inputData(const void *data_, unsigned int length) {
                 &m_cachedData, // IN
                 &rspAuthsArray /* OUT */);
         if (err) {
-            std::stringstream msg;
+            std::ostringstream msg;
             msg << "HashSequenceScheduler::inputData(): TPM Command Tss2_Sys_SequenceUpdate() has returned an error code 0x" << std::hex << err;
             throw std::runtime_error(msg.str());
         }
@@ -430,7 +430,7 @@ void HashSequenceScheduler::complete() {
             &m_validationTicket, // OUT
             &rspAuthsArray); //
     if (err) {
-        std::stringstream msg;
+        std::ostringstream msg;
         msg << "HashSequenceScheduler::complete(): TPM Command Tss2_Sys_SequenceComplete() has returned an error code 0x" << std::hex << err;
         throw std::runtime_error(msg.str());
     }
