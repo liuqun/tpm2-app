@@ -34,8 +34,6 @@ static void PrintHelp()
 using std::vector;
 #include <string>
 using std::string;
-#include <sstream>
-using std::stringstream;
 #include <stdexcept>
 using std::exception;
 using std::runtime_error;
