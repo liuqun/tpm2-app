@@ -53,11 +53,7 @@ private:
     TPMCommand *m_pLastCommand; ///< 内部成员变量. m_pLastCommand总是指向之前最后一次调用sendCommand()成员函数时的关联的TPMCommand参数的内存地址
 };
 
-class SequenceScheduler: public Client
-{
-};
-
-class HMACSequenceScheduler: public SequenceScheduler
+class HMACSequenceScheduler: public Client
 {
 public:
     HMACSequenceScheduler();
@@ -107,7 +103,7 @@ private:
     TPM2B_AUTH m_savedAuthValueForSequenceHandle;
 };
 
-class HashSequenceScheduler: public SequenceScheduler
+class HashSequenceScheduler: public Client
 {
 public:
     HashSequenceScheduler();
