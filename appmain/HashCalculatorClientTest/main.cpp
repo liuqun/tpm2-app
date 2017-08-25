@@ -3,6 +3,7 @@
 // All rights reserved.
 #include <cstdio>
 #include <cstdlib>
+#include <errno.h>
 using namespace std;
 
 #include <sapi/tpm20.h>
@@ -100,6 +101,8 @@ int main(int argc, char *argv[])
     }
     pInitializer->connect();
 
+#warning // 临时注释掉下列测试代码
+#if 0
     HashCalculatorClient client;
     client.initialize(*pInitializer);
     /* 第一组测试数据 */
@@ -130,6 +133,41 @@ int main(int argc, char *argv[])
                 printf("%02X:", (BYTE) *i);
             }
             printf("\n");
+        }
+    }
+#endif
+
+    /* 使用同一组测试数据测试 FileHashCalculatorClient */
+    system("echo -n abc > ./test1.data");
+    const char *szFilename = "test1.data";
+    {
+        FileHashCalculatorClient calc;
+        calc.initialize(*pInitializer);
+        FILE *fp;
+        if (!(fp = fopen(szFilename, "rb")))
+        {
+            fprintf(stderr, "Error: Cannot open file \"%s\"\n", strerror(errno));
+        } else
+        {
+            const vector<BYTE>& digest = calc.SHA1(fp);
+            fseek(fp, 0L, SEEK_SET);
+            printf("输入文本为:\n");
+            int ch;
+            while ((ch=fgetc(fp)) != EOF)
+            {
+                printf("%c", (char)ch);
+            }
+            fclose(fp);
+            printf("\n");
+            printf("实际输出SHA1哈希摘要:\n");
+            {
+                vector<BYTE>::const_iterator i;
+                for (i=digest.begin(); i!=digest.end(); i++)
+                {
+                    printf("%02X:", (BYTE) *i);
+                }
+                printf("\n");
+            }
         }
     }
 
