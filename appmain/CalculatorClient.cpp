@@ -184,3 +184,43 @@ const vector<unsigned char>& HMACCalculatorClient::HMAC_SHA256(
     RunHMACCalcProgram(*this, TPM_ALG_SHA256, m_hmacDigest, data, nDatalength, key, nKeyLength);
     return m_hmacDigest;
 }
+
+/* 以下代码实现 FileHashCalculatorClient 类 */
+
+// 采取对象包装器模式, 完成TSS上下文初始化
+void FileHashCalculatorClient::initialize(TSSContextInitializer & initializer)
+{
+    m_scheduler.initialize(initializer);
+}
+
+// 计算文件的SHA1
+const std::vector<unsigned char>& FileHashCalculatorClient::SHA1(FILE *fpFileIn)
+{
+    m_digest.clear();
+    try
+    {
+        //BYTE buf[2*1024];
+        BYTE buf[2];
+        const int nBufSize = sizeof(buf);
+        int len = 0;
+
+        m_scheduler.start(TPM_ALG_SHA1);
+        while (!(feof(fpFileIn)))
+        {
+            len = fread(buf, sizeof(BYTE), nBufSize, fpFileIn);
+            if (len > 0)
+            {
+                m_scheduler.inputData(buf, len);
+            }
+        }
+        m_scheduler.complete();
+
+        const TPM2B_DIGEST& digest = m_scheduler.outDigest();
+        m_digest.assign(digest.t.buffer, digest.t.buffer + digest.t.size);
+    }
+    catch (std::exception& err)
+    {
+        fprintf(stderr, "Error: %s\n", err.what());
+    }
+    return m_digest;
+}

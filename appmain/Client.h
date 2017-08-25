@@ -149,5 +149,13 @@ private:
     TPM2B_AUTH m_savedAuthValueForSequenceHandle;
 };
 
+/// 对外定义C++包装器类
+class WrapperClient
+{
+public:
+    /** 依靠外部initializer对此伪调度器进行初始化 */
+    virtual void initialize(TSSContextInitializer& initializer) = 0;
+};
+
 #endif // __cplusplus
 #endif // CLIENT_H_

@@ -41,6 +41,34 @@ private:
 };
 
 
+#include <cstdio>
+
+/// 计算文件的哈希摘要
+class FileHashCalculatorClient: public WrapperClient
+{
+public:
+    /// 计算SHA1哈希摘要结果
+    ///
+    /// @return SHA1 哈希摘要结果, 格式为二进制数据, 类型为 const vector<BYTE>& C++ 指针引用
+    const std::vector<unsigned char>& SHA1(FILE *fpFileIn=stdin ///< 通过标准文件IO流读取输入数据
+            );
+
+    /// 计算SHA256哈希摘要结果
+    ///
+    /// @return SHA256 哈希摘要结果, 格式为二进制数据, 类型为 const vector<BYTE>& C++ 指针引用
+    const std::vector<unsigned char>& SHA256(FILE *fpFileIn=stdin ///< 通过标准文件IO流读取输入数据
+            );
+
+public:
+    /// 初始化
+    void initialize(TSSContextInitializer& initializer);
+
+private:
+    HashSequenceScheduler m_scheduler;
+    std::vector<unsigned char> m_digest;
+};
+
+
 /// 计算单个数据包的HMAC对称签名, 输入数据的最大长度由TPM硬件以及TSS动态库限制, 通常为1024字节
 class HMACCalculatorClient: public Client
 {
