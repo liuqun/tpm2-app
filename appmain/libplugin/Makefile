@@ -15,6 +15,9 @@ LIBOBJ_FILES = $(patsubst %, libplugin.a(%), $(OBJ_FILES))
 all: $(LIB_FILE)
 $(LIB_FILE): $(LIBOBJ_FILES)
 
+# 编译选项: 设置生成静态库的参数. 对应binutils工具包中的ar命令.
+ARFLAGS = rvU
+
 # PREFIX should be the same dir where TPM2.0-TSS libraries has been installed to
 PREFIX := /usr/local
 
