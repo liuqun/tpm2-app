@@ -199,8 +199,7 @@ const std::vector<unsigned char>& FileHashCalculatorClient::SHA1(FILE *fpFileIn)
     m_digest.clear();
     try
     {
-        //BYTE buf[2*1024];
-        BYTE buf[2];
+        BYTE buf[2*1024];
         const int nBufSize = sizeof(buf);
         int len = 0;
 
