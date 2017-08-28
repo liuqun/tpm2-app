@@ -1,6 +1,7 @@
 /* encoding: utf-8 */
 // Copyright (c) 2017, 青岛中怡智能安全研究院有限公司
 // All rights reserved.
+#include <cctype>
 #include <cstdio>
 #include <cstdlib>
 #include <errno.h>
@@ -155,6 +156,10 @@ int main(int argc, char *argv[])
             int ch;
             while ((ch=fgetc(fp)) != EOF)
             {
+                if (!(isprint(ch) || iscntrl(ch)))
+                {
+                    ch = ' ';
+                }
                 printf("%c", (char)ch);
             }
             fclose(fp);
