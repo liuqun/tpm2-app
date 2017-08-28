@@ -1,6 +1,7 @@
 # Makefile for TPM 2.0 application main entrance
 EXEC_FILES += HMACTest/main
 EXEC_FILES += HashCalculatorClientTest/main
+EXEC_FILES += HashCalculatorClientTest/sha1sum
 EXEC_FILES += AESCalculatorClientTest/main
 
 .PHONY: default
@@ -42,6 +43,9 @@ libplugin/libplugin.a: ALWAYS_REBUILD
 
 TestCase.o: TestCase.cpp TestCase.h TPMCommand.h
 	$(COMPILE_cpp) -o $@ $<
+
+HashCalculatorClientTest/sha1sum: HashCalculatorClientTest/sha1sum.o $(OBJ_FILES) libplugin/libplugin.a
+	$(CXX) $(LD_FLAGS) -o $@ $^ $(LIBS)
 
 %/main: %/main.o $(OBJ_FILES) libplugin/libplugin.a
 	$(CXX) $(LD_FLAGS) -o $@ $^ $(LIBS)
