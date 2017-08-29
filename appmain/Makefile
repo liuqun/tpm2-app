@@ -44,14 +44,14 @@ libplugin/libplugin.a: ALWAYS_REBUILD
 TestCase.o: TestCase.cpp TestCase.h TPMCommand.h
 	$(COMPILE_cpp) -o $@ $<
 
-HashCalculatorClientTest/sha1sum: HashCalculatorClientTest/sha1sum.o $(OBJ_FILES) libplugin/libplugin.a
-	$(CXX) $(LD_FLAGS) -o $@ $^ $(LIBS)
-
 %/main: %/main.o $(OBJ_FILES) libplugin/libplugin.a
 	$(CXX) $(LD_FLAGS) -o $@ $^ $(LIBS)
 
 %/main.o: %/main.cpp $(INCLUDE_FILES)
 	$(COMPILE_cpp) -o $@ $<
+
+HashCalculatorClientTest/%: HashCalculatorClientTest/%.o $(OBJ_FILES) libplugin/libplugin.a
+	$(CXX) $(LD_FLAGS) -o $@ $^ $(LIBS)
 
 %.o: %.c %.h
 	$(COMPILE_c) -o $@ $<
