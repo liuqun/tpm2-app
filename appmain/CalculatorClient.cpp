@@ -11,10 +11,68 @@ using std::runtime_error;
 #include "CalculatorClient.h"
 #include "TPMCommand.h"
 
+/// ```
+/// TPM2B_MAX_BUFFER *p=NULL;
+/// const static unsigned short MaxBlockSize = sizeof(p->t.buffer);
+/// ```
+static const unsigned short MaxBlockSize=1024; ///< 单个数据包最大可发送的字节数
+
+// 采取对象包装器模式, 完成TSS上下文初始化
+void HashCalculatorClient::initialize(TSSContextInitializer & initializer)
+{
+    m_scheduler.initialize(initializer);
+}
+
+// 采取对象包装器模式, 间接转发TPM命令帧
+void HashCalculatorClient::sendCommand(TPMCommand& command)
+{
+    m_scheduler.sendCommand(command);
+}
+
+// 采取对象包装器模式, 间接取回TPM应答帧
+void HashCalculatorClient::fetchResponse(int32_t timeout)
+{
+    m_scheduler.fetchResponse(timeout);
+}
+
 // 计算SHA256哈希摘要结果
 const vector<unsigned char>& HashCalculatorClient::SHA256(const void *data, // 指向输入数据的指针
-        unsigned short length // 数据长度. 单位: 字节. 取值范围[0, 1024], 单条输入数据的长度上限受TSS和物理硬件共同限制, 实际上限有可能小于1024字节
+        unsigned long long length // 数据长度. 单位: 字节. 取值范围[0, ULLONG_MAX]
         ) {
+    if (length > MaxBlockSize) {
+        m_digest.clear();
+        try {
+            unsigned long long left = length;
+            const unsigned char *p = (const unsigned char *) data;
+
+            m_scheduler.start(TPM_ALG_SHA256);
+            while (left)
+            {
+                unsigned short n = MaxBlockSize;
+                if (left < MaxBlockSize)
+                {
+                    n = (unsigned short) left;
+                }
+                m_scheduler.inputData(p, n);
+                p += n;
+                left -= n;
+            }
+            m_scheduler.complete();
+
+            const TPM2B_DIGEST& digest = m_scheduler.outDigest();
+            m_digest.assign(digest.t.buffer, digest.t.buffer + digest.t.size);
+        } catch (std::exception& err) {
+            std::ostringstream msg;
+            msg << "Error: 命令执行失败! " << err.what();
+            throw std::runtime_error(msg.str());
+        } catch (...) {
+            std::ostringstream msg;
+            msg << "An unknown error was detected from " << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__;
+            throw std::runtime_error(msg.str());
+        }
+        return m_digest;
+    }
+
     TPMCommands::Hash hashCmd;
     hashCmd.configHashAlgorithmUsingSHA256();
     m_digest.clear();
@@ -34,8 +92,42 @@ const vector<unsigned char>& HashCalculatorClient::SHA256(const void *data, // �
 
 // 计算SHA1哈希摘要结果
 const vector<unsigned char>& HashCalculatorClient::SHA1(const void *data, // 指向输入数据的指针
-        unsigned short length // 数据长度. 单位: 字节. 取值范围[0, 1024], 单条输入数据的长度上限受TSS和物理硬件共同限制, 实际上限有可能小于1024字节
+        unsigned long long length // 数据长度. 单位: 字节. 取值范围[0, ULLONG_MAX]
         ) {
+    if (length > MaxBlockSize) {
+        m_digest.clear();
+        try {
+            unsigned long long left = length;
+            const unsigned char *p = (const unsigned char *) data;
+
+            m_scheduler.start(TPM_ALG_SHA1);
+            while (left)
+            {
+                unsigned short n = MaxBlockSize;
+                if (left < MaxBlockSize)
+                {
+                    n = (unsigned short) left;
+                }
+                m_scheduler.inputData(p, n);
+                p += n;
+                left -= n;
+            }
+            m_scheduler.complete();
+
+            const TPM2B_DIGEST& digest = m_scheduler.outDigest();
+            m_digest.assign(digest.t.buffer, digest.t.buffer + digest.t.size);
+        } catch (std::exception& err) {
+            std::ostringstream msg;
+            msg << "Error: 命令执行失败! " << err.what();
+            throw std::runtime_error(msg.str());
+        } catch (...) {
+            std::ostringstream msg;
+            msg << "An unknown error was detected from " << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__;
+            throw std::runtime_error(msg.str());
+        }
+        return m_digest;
+    }
+
     TPMCommands::Hash hashCmd;
     hashCmd.configHashAlgorithmUsingSHA1();
     m_digest.clear();
@@ -186,12 +278,6 @@ const vector<unsigned char>& HMACCalculatorClient::HMAC_SHA256(
 }
 
 /* 以下代码实现 FileHashCalculatorClient 类 */
-
-// 采取对象包装器模式, 完成TSS上下文初始化
-void FileHashCalculatorClient::initialize(TSSContextInitializer & initializer)
-{
-    m_scheduler.initialize(initializer);
-}
 
 // 计算文件的SHA1
 const std::vector<unsigned char>& FileHashCalculatorClient::SHA1(FILE *fpFileIn)
