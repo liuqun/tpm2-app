@@ -309,3 +309,34 @@ const std::vector<unsigned char>& FileHashCalculatorClient::SHA1(FILE *fpFileIn)
     }
     return m_digest;
 }
+
+// 计算文件的SHA256
+const std::vector<unsigned char>& FileHashCalculatorClient::SHA256(FILE *fpFileIn)
+{
+    m_digest.clear();
+    try
+    {
+        BYTE buf[2*1024];
+        const int nBufSize = sizeof(buf);
+        int len = 0;
+
+        m_scheduler.start(TPM_ALG_SHA256);
+        while (!(feof(fpFileIn)))
+        {
+            len = fread(buf, sizeof(BYTE), nBufSize, fpFileIn);
+            if (len > 0)
+            {
+                m_scheduler.inputData(buf, len);
+            }
+        }
+        m_scheduler.complete();
+
+        const TPM2B_DIGEST& digest = m_scheduler.outDigest();
+        m_digest.assign(digest.t.buffer, digest.t.buffer + digest.t.size);
+    }
+    catch (std::exception& err)
+    {
+        fprintf(stderr, "Error: %s\n", err.what()); // TODO: raise/throw another exception to the uppper level
+    }
+    return m_digest;
+}
