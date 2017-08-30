@@ -103,6 +103,7 @@ int main(int argc, char *argv[])
     HashCalculatorClient client;
     client.initialize(*pInitializer);
     /* 第一组测试数据 */
+    printf("【测试用例-1】\n");
     {
         const char *szMsg = "abc";
         const uint16_t nMsgLen = strlen(szMsg);
@@ -131,6 +132,41 @@ int main(int argc, char *argv[])
             }
             printf("\n");
         }
+    }
+
+    /* 第二组测试数据 */
+    printf("【测试用例-2】\n");
+    {
+        const unsigned nMsgLen = 1000000;
+        char *szMsg = new char[nMsgLen];
+        printf("测试输入字符串长度=%d字节, 内容全为字母a(无回车换行符)\n", (int)nMsgLen);
+        memset(szMsg, 'a', nMsgLen);
+
+        printf("输出SHA1哈希结果如下:\n");
+        {
+            const std::vector<BYTE>& digest =
+                    client.SHA1(szMsg, nMsgLen);
+            vector<BYTE>::const_iterator i;
+            for (i=digest.begin(); i!=digest.end(); i++)
+            {
+                printf("%02X:", (BYTE) *i);
+            }
+            printf("\n");
+        }
+
+        printf("输出SHA256哈希结果如下:\n");
+        {
+            const std::vector<BYTE>& digest =
+                    client.SHA256(szMsg, nMsgLen);
+            vector<BYTE>::const_iterator i;
+            for (i=digest.begin(); i!=digest.end(); i++)
+            {
+                printf("%02X:", (BYTE) *i);
+            }
+            printf("\n");
+        }
+
+        delete[] szMsg;
     }
 
     pInitializer->disconnect();
