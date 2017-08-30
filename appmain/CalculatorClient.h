@@ -13,6 +13,7 @@
 
 #include <vector>
 #include "Client.h"
+#include "SequenceScheduler.h"
 
 /// 计算单个数据包的哈希摘要, 输入数据的最大长度由TPM硬件以及TSS动态库限制, 通常为1024字节
 class HashCalculatorClient: public WrapperClient

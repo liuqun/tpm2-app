@@ -9,6 +9,7 @@ using std::runtime_error;
 #include <sapi/tpm20.h>
 #include "Client.h"
 #include "TPMCommand.h"
+#include "SequenceScheduler.h"
 
 /* 排版格式: 以下函数均使用4个空格缩进，不使用Tab缩进 */
 
