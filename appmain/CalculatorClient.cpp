@@ -297,8 +297,10 @@ const std::vector<unsigned char>& FileHashCalculatorClient::SHA1(FILE *fpFileIn)
             {
                 m_scheduler.inputData(buf, len);
             }
+            fprintf(stderr, ".");
         }
         m_scheduler.complete();
+        fprintf(stderr, "\n");
 
         const TPM2B_DIGEST& digest = m_scheduler.outDigest();
         m_digest.assign(digest.t.buffer, digest.t.buffer + digest.t.size);
@@ -328,8 +330,10 @@ const std::vector<unsigned char>& FileHashCalculatorClient::SHA256(FILE *fpFileI
             {
                 m_scheduler.inputData(buf, len);
             }
+            fprintf(stderr, ".");
         }
         m_scheduler.complete();
+        fprintf(stderr, "\n");
 
         const TPM2B_DIGEST& digest = m_scheduler.outDigest();
         m_digest.assign(digest.t.buffer, digest.t.buffer + digest.t.size);
