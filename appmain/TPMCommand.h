@@ -333,6 +333,27 @@ public:
             );
 };
 
+/// 将 TPM 密钥或数据对象的上下文备份到 TPM 外部
+class ContextSave: public TPMCommand
+/// @see ContextLoad, FlushLoadedKeyNode
+{
+public:
+    ContextSave();
+    virtual void buildCmdPacket(TSS2_SYS_CONTEXT *ctx);
+    virtual void unpackRspPacket(TSS2_SYS_CONTEXT *ctx);
+    virtual ~ContextSave();
+    /**
+     * 通过对象句柄指定要备份哪个密钥节点
+     *
+     * @throws std::invalid_argument 句柄类型不合理的情况下抛出该异常, 并附带一个字符串作为说明
+     */
+    void configHandle(TPM_HANDLE handle);
+    /**
+     * 二进制格式的 TPM 对象上下文
+     */
+    const TPMS_CONTEXT& outContext();
+};
+
 /// 调用TPM 密钥创建命令 Tss2_Sys_CreatePrimary() 创建一个新的密钥树主节点
 class CreatePrimary: public TPMCommand
 {
