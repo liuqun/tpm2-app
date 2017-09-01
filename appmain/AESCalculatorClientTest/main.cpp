@@ -412,8 +412,6 @@ int main(int argc, char *argv[])
         }
     };
 
-    connectionManager->connect();
-
     try
     {
         AESCalculatorClient client;
