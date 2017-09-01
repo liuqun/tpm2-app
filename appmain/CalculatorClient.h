@@ -41,8 +41,12 @@ protected:
     std::vector<unsigned char> m_digest;
 
 public:
-    /// 客户端初始化
-    void initialize(TSSContextInitializer& initializer);
+    /// 客户端绑定串口连接或socket连接
+    void bind(ConnectionManager& connectionManager);
+
+public:
+    /// 客户端解绑
+    void unbind();
 
 protected:
     /// 私有成员变量, 通过 TPM2.0 hash sequence 调度程序完成哈希计算

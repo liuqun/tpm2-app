@@ -17,6 +17,8 @@ using namespace std;
 #include "TPMCommand.h"
 #include "Client.h"
 #include "CalculatorClient.h"
+#include "ConnectionManager.h"
+#include "SocketConnectionManager.h"
 
 /* 排版格式: 以下函数均使用4个空格缩进，不使用Tab缩进 */
 
@@ -88,20 +90,20 @@ int main(int argc, char *argv[])
         // 如果不指定命令行参数, 则会直接连接到本机 IP 地址默认端口上运行的资源管理器
     }
 
-    SocketBasedTSSContextInitializer socketTCTIContextInitializer(hostname, port);
-    DeviceBasedTSSContextInitializer deviceTCTIContextInitializer(deviceFile);
+    SocketConnectionManager socketConnectionManager(hostname, port);
+    CharacterDeviceConnectionManager charDevConnectionManager(deviceFile);
 
-    TSSContextInitializer *pInitializer; ///< 通过指针选择使用哪一个上下文初始化器
+    ConnectionManager *connectionManager; ///< 通过指针选择使用哪一个上下文初始化器
 
-    pInitializer = &socketTCTIContextInitializer; // 默认优先使用socket TCTI 连接2323端口上的resourcemgr或2321端口上的Simulator
+    connectionManager = &socketConnectionManager; // 默认优先使用socket TCTI 连接2323端口上的resourcemgr或2321端口上的Simulator
     if (usingDeviceFile)
     {
-        pInitializer = &deviceTCTIContextInitializer;
+        connectionManager = &charDevConnectionManager;
     }
-    pInitializer->connect();
+    connectionManager->connect();
 
     HashCalculatorClient client;
-    client.initialize(*pInitializer);
+    client.bind(*connectionManager);
     /* 第一组测试数据 */
     printf("【测试用例-1】\n");
     {
@@ -169,7 +171,8 @@ int main(int argc, char *argv[])
         delete[] szMsg;
     }
 
-    pInitializer->disconnect();
+    client.unbind();
+    connectionManager->disconnect();
 
     return (0);
 }

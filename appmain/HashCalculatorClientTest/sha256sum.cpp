@@ -20,6 +20,8 @@ using std::exception;
 
 #include "Client.h"
 #include "CalculatorClient.h"
+#include "ConnectionManager.h"
+#include "SocketConnectionManager.h"
 
 /* 排版格式: 以下函数均使用4个空格缩进，不使用Tab缩进 */
 
@@ -83,17 +85,17 @@ int main(int argc, char *argv[])
         // 如果不指定命令行参数, 则会直接连接到本机 IP 地址默认端口上运行的资源管理器
     }
 
-    SocketBasedTSSContextInitializer socketTSSContextInitializer(hostname, port);
-    DeviceBasedTSSContextInitializer deviceTSSContextInitializer(deviceFile);
+    SocketConnectionManager socketConnectionManager(hostname, port);
+    CharacterDeviceConnectionManager charDevConnectionManager(deviceFile);
 
-    TSSContextInitializer *pInitializer; ///< 通过指针选择使用哪一个上下文初始化器
+    ConnectionManager *connectionManager; ///< 通过指针选择使用哪一个上下文初始化器
 
-    pInitializer = &socketTSSContextInitializer; // 默认优先使用 socket 连接 (连接2323端口上的resourcemgr或2321端口上的Simulator, 取决于头文件tcti_socket.h的版本)
+    connectionManager = &socketConnectionManager; // 默认优先使用socket TCTI 连接2323端口上的resourcemgr或2321端口上的Simulator
     if (usingDeviceFile)
     {
-        pInitializer = &deviceTSSContextInitializer;
+        connectionManager = &charDevConnectionManager;
     }
-    pInitializer->connect();
+    connectionManager->connect();
 
     /* 测试 FileHashCalculatorClient */
     const char *szFilename=NULL;
@@ -114,8 +116,9 @@ int main(int argc, char *argv[])
     try
     {
         FileHashCalculatorClient calc;
-        calc.initialize(*pInitializer);
+        calc.bind(*connectionManager);
         const vector<BYTE>& digest = calc.SHA256(fp);
+        calc.unbind();
         {
             vector<BYTE>::const_iterator i;
             for (i=digest.begin(); i!=digest.end(); i++)
@@ -131,7 +134,7 @@ int main(int argc, char *argv[])
 
 
 DISCONNECT:
-    pInitializer->disconnect();
+    connectionManager->disconnect();
 
     return (0);
 }

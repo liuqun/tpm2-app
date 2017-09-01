@@ -17,6 +17,8 @@ using namespace std;
 #include "TPMCommand.h"
 #include "Client.h"
 #include "CalculatorClient.h"
+#include "ConnectionManager.h"
+#include "SocketConnectionManager.h"
 
 /* 排版格式: 以下函数均使用4个空格缩进，不使用Tab缩进 */
 
@@ -88,22 +90,22 @@ int main(int argc, char *argv[])
         // 如果不指定命令行参数, 则会直接连接到本机 IP 地址默认端口上运行的资源管理器
     }
 
-    SocketBasedTSSContextInitializer socketTSSContextInitializer(hostname, port);
-    DeviceBasedTSSContextInitializer deviceTSSContextInitializer(deviceFile);
+    SocketConnectionManager socketConnectionManager(hostname, port);
+    CharacterDeviceConnectionManager deviceConnectionManager(deviceFile);
 
-    TSSContextInitializer *pInitializer; ///< 通过指针选择使用哪一个上下文初始化器
+    ConnectionManager *connectionManager; ///< 通过指针选择使用哪一个上下文初始化器
 
-    pInitializer = &socketTSSContextInitializer; // 默认优先使用socket连接(2323端口上的resourcemgr或2321端口上的Simulator)
+    connectionManager = &socketConnectionManager; // 默认优先使用socket连接(2323端口上的resourcemgr或2321端口上的Simulator)
     if (usingDeviceFile)
     {
-        pInitializer = &deviceTSSContextInitializer;
+        connectionManager = &deviceConnectionManager;
     }
-    pInitializer->connect();
+    connectionManager->connect();
 
     /* HMAC 测试 */
     {
         HMACCalculatorClient client;
-        client.initialize(*pInitializer);
+        client.bind(*connectionManager);
         try
         {
             // 一组 HMAC-SHA-1 测试数据, 来自 https://tools.ietf.org/html/rfc2202#section-3
@@ -187,12 +189,14 @@ int main(int argc, char *argv[])
             fprintf(stderr, "Error: %s\n", err.what());
             PrintHelp();
         }
+
+        client.unbind();
     }
 
     /* HMAC 多桢序列测试 */
     {
         HMACSequenceScheduler scheduler;
-        scheduler.initialize(*pInitializer);
+        scheduler.bind(*connectionManager);
         try
         {
             // 一组 HMAC-SHA-1 测试数据, 来自 https://tools.ietf.org/html/rfc2202#section-3
@@ -276,12 +280,14 @@ int main(int argc, char *argv[])
             fprintf(stderr, "Error: %s\n", err.what());
             PrintHelp();
         }
+
+        scheduler.unbind();
     }
 
     /* 哈希摘要(SHA1/256)多桢序列测试 */
     {
         HashSequenceScheduler scheduler;
-        scheduler.initialize(*pInitializer);
+        scheduler.bind(*connectionManager);
         const BYTE Data[] = // 下列测试用例取自 tpmclient 中的 TestHash() 函数
         {
             0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
@@ -388,9 +394,11 @@ int main(int argc, char *argv[])
             fprintf(stderr, "Error: %s\n", err.what());
             PrintHelp();
         }
+
+        scheduler.unbind();
     }
 
-    pInitializer->disconnect();
+    connectionManager->disconnect();
 
     return (0);
 }

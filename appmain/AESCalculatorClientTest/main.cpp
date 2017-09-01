@@ -17,6 +17,8 @@ using namespace std;
 #include "TPMCommand.h"
 #include "Client.h"
 #include "CalculatorClient.h"
+#include "ConnectionManager.h"
+#include "SocketConnectionManager.h"
 
 /* 排版格式: 以下函数均使用4个空格缩进，不使用Tab缩进 */
 
@@ -90,16 +92,17 @@ int main(int argc, char *argv[])
         // 如果不指定命令行参数, 则会直接连接到本机 IP 地址默认端口上运行的资源管理器
     }
 
-    SocketBasedTSSContextInitializer socketTCTIContextInitializer(hostname, port);
-    DeviceBasedTSSContextInitializer deviceTCTIContextInitializer(deviceFile);
+    SocketConnectionManager socketConnectionManager(hostname, port);
+    CharacterDeviceConnectionManager deviceConnectionManager(deviceFile);
 
-    TSSContextInitializer *pInitializer; ///< 通过指针选择使用哪一个上下文初始化器
+    ConnectionManager *connectionManager; ///< 通过指针选择使用哪一个上下文初始化器
 
-    pInitializer = &socketTCTIContextInitializer;
+    connectionManager = &socketConnectionManager; // 默认优先使用socket连接(2323端口上的resourcemgr或2321端口上的Simulator)
     if (usingDeviceFile)
     {
-        pInitializer = &deviceTCTIContextInitializer;
+        connectionManager = &deviceConnectionManager;
     }
+    connectionManager->connect();
 
     class AESCalculatorClient: public Client
     {
@@ -409,13 +412,13 @@ int main(int argc, char *argv[])
         }
     };
 
-    pInitializer->connect();
+    connectionManager->connect();
 
     try
     {
         AESCalculatorClient client;
 
-        client.initialize(*pInitializer);
+        client.bind(*connectionManager);
 
         const char *Data = "Hi There";
         const uint16_t nDataLen = strlen(Data);
@@ -447,6 +450,8 @@ int main(int argc, char *argv[])
             printf("%c", (BYTE) *j);
         }
         printf("\n");
+
+        client.unbind();
     }
     catch (std::exception& err)
     {
@@ -454,7 +459,7 @@ int main(int argc, char *argv[])
         PrintHelp();
     }
 
-    pInitializer->disconnect();
+    connectionManager->disconnect();
 
     return (0);
 }

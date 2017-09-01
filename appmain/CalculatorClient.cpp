@@ -18,9 +18,15 @@ using std::runtime_error;
 static const unsigned short MaxBlockSize=1024; ///< 单个数据包最大可发送的字节数
 
 // 采取对象包装器模式, 完成TSS上下文初始化
-void HashCalculatorClient::initialize(TSSContextInitializer & initializer)
+void HashCalculatorClient::bind(ConnectionManager& connectionManager)
 {
-    m_scheduler.initialize(initializer);
+    m_scheduler.bind(connectionManager);
+}
+
+// 采取对象包装器模式, 完成TSS上下文初始化
+void HashCalculatorClient::unbind()
+{
+    m_scheduler.unbind();
 }
 
 // 采取对象包装器模式, 间接转发TPM命令帧

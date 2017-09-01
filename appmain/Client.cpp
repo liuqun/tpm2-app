@@ -13,27 +13,18 @@ using std::exception;
 /* 排版格式: 以下函数均使用4个空格缩进，不使用Tab缩进 */
 
 Client::Client() {
-    m_sysContextSize = Tss2_Sys_GetContextSize(0);
-    m_sysContext = (TSS2_SYS_CONTEXT *) malloc(m_sysContextSize);
-    if (!m_sysContext)
-    {
-        fprintf(stderr, "Error: malloc() failed to allocate dynamic memory\n");
-        exit (EXIT_FAILURE);
-    }
-    memset(m_sysContext, 0x00, m_sysContextSize);
     m_pLastCommand = NULL;
+    m_sysContext = NULL;
 }
 
-Client::~Client() {
-    /* 销毁 System API 上下文对象 */
-    assert(m_sysContext);
-    Tss2_Sys_Finalize(m_sysContext);
-    memset(m_sysContext, 0xFF, m_sysContextSize);
-    free(m_sysContext);
+void Client::bind(ConnectionManager& connectionManager) {
+    this->ApplicationBasedOnTSSSystemAPI::bind(connectionManager);
+    m_sysContext = (TSS2_SYS_CONTEXT *) getContextPtr();
 }
 
-void Client::initialize(TSSContextInitializer& initializer) {
-    initializer.setupSysContext(m_sysContext, m_sysContextSize);
+void Client::unbind() {
+    m_sysContext = NULL;
+    this->ApplicationBasedOnTSSSystemAPI::unbind();
 }
 
 void Client::sendCommandAndWaitUntilResponseIsFetched(TPMCommand& cmd) {

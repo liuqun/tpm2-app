@@ -11,24 +11,21 @@
 
 #include <sapi/tpm20.h>
 #include "TPMCommand.h"
-#include "TSSContextInitializer.h"
+#include "ApplicationBasedOnTSSSystemAPI.h"
 
 #ifdef __cplusplus
 
 /// TPM客户端
-class Client
+class Client: public ApplicationBasedOnTSSSystemAPI
 {
-private:
-    size_t m_sysContextSize;
-
 public:
     TSS2_SYS_CONTEXT *m_sysContext; ///< 成员变量 m_sysContext (取代全局变量 sysContext, 降低耦合度).
     /** 构造函数 */
     Client();
-    /** 客户端初始化 */
-    void initialize(TSSContextInitializer& initializer);
-    /** 析构函数 */
-    virtual ~Client();
+    /** 客户端绑定一个串口连接或socket连接 */
+    void bind(ConnectionManager& connectionManager);
+    /** 客户端解除绑定 */
+    void unbind();
     /** 发送命令帧 */
     void sendCommand(
             TPMCommand& command ///< 输入参数. 此TPMCommand对象自带buildCmdPacket()组帧方法生成命令帧报文
@@ -57,8 +54,10 @@ private:
 class WrapperClient
 {
 public:
-    /** 依靠外部initializer对此伪调度器进行初始化 */
-    virtual void initialize(TSSContextInitializer& initializer) = 0;
+    /** 客户端绑定一个串口连接或socket连接 */
+    virtual void bind(ConnectionManager& connectionManager) = 0;
+    /** 客户端解除绑定 */
+    virtual void unbind() = 0;
 };
 
 #endif // __cplusplus
