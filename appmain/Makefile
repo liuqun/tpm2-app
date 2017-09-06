@@ -4,6 +4,7 @@ EXEC_FILES += HashCalculatorClientTest/main
 EXEC_FILES += HashCalculatorClientTest/sha1sum
 EXEC_FILES += HashCalculatorClientTest/sha256sum
 EXEC_FILES += AESCalculatorClientTest/main
+EXEC_FILES += ObjectContextSavingAndLoadingTest/main
 
 .PHONY: default
 default: $(EXEC_FILES)
