@@ -354,6 +354,27 @@ public:
     const TPMS_CONTEXT& outContext();
 };
 
+/// 通过导入之前备份到 TPM 外部的对象上下文恢复之前创建的对象
+class ContextLoad: public TPMCommand
+/// @see ContextSave, FlushLoadedKeyNode
+{
+public:
+    ContextLoad();
+    virtual void buildCmdPacket(TSS2_SYS_CONTEXT *ctx);
+    virtual void unpackRspPacket(TSS2_SYS_CONTEXT *ctx);
+    virtual ~ContextLoad();
+    /** 填写之前导出的对象上下文(用于恢复原始对象) */
+    void configContext(const TPMS_CONTEXT& context);
+    /** 填写之前导出的对象上下文(用于恢复原始对象) */
+    void configContext(UINT64 sequence,
+            TPMI_DH_CONTEXT savedHandle,
+            TPMI_RH_HIERARCHY hierarchy,
+            const TPM2B_CONTEXT_DATA& contextBlob
+            );
+    /** 得到新的句柄 */
+    TPM_HANDLE outHandle();
+};
+
 /// 调用TPM 密钥创建命令 Tss2_Sys_CreatePrimary() 创建一个新的密钥树主节点
 class CreatePrimary: public TPMCommand
 {
