@@ -39,7 +39,7 @@ void DumpBase64TextFile(FILE *fpOut, unsigned int len, const void *dataIn) {
         'g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v',
         'w','x','y','z','0','1','2','3','4','5','6','7','8','9','+','/'
     };
-    const char *data = (const char *)dataIn;
+    const unsigned char *data = (const unsigned char *)dataIn;
     unsigned int a, b, c, d;
     unsigned int i;
     for (i=3; i<=len; i+=3) {
