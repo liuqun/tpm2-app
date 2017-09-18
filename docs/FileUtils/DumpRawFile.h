@@ -16,14 +16,9 @@ extern "C" {
  * @param fpOut
  * @param length
  * @param dataIn
- * @throws std::ios_base::failure when file output failed. 可能原因包括: 1.文件不可写(权限不足); 2.磁盘已满; 3.其他
+ * @throws std::ios::failure when file output failed. 可能原因包括: 1.文件不可写(权限不足); 2.磁盘已满; 3.其他
  */
 void DumpRawFile(FILE *fpOut, unsigned int length, const void *dataIn);
-
-/**
- * 按Base64纯文本文件格式输出数据
- */
-void DumpBase64TextFile(FILE *fpOut, unsigned int dataInLength, const void *dataIn);
 
 #ifdef __cplusplus
 };

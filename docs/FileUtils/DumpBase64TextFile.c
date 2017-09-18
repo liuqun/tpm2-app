@@ -5,32 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
-#ifdef __cplusplus
-#include <fstream>
-using namespace std;
-using std::ofstream; // 只用到其中的 std::ofstream::failure
-#endif
-#include "DumpRawFile.h"
-
-void DumpRawFile(FILE *fpOut, unsigned int dataInLength, const void *dataIn) {
-    const char *data = (const char *)dataIn;
-    unsigned left;
-    unsigned cnt;
-
-    clearerr(fpOut);
-    cnt = 0; // 累计已输出的字节数, 初始值=0
-    while (cnt < dataInLength) {
-        left = dataInLength - cnt; // 剩余字节数
-        size_t n = fwrite(data+cnt, sizeof(char), left, fpOut);
-        if (ferror(fpOut)) {
-#ifdef __cplusplus
-            throw new ofstream::failure(strerror(errno)); // Note: We decided to throw an C++ IO expection on IO errors.
-#endif
-            break;
-        }
-        cnt += n; // 累加本轮成功输出的字节数
-    }
-}
+#include "DumpBase64File.h"
 
 void DumpBase64TextFile(FILE *fpOut, unsigned int len, const void *dataIn) {
     const char base[64] = { //base64编码映射表
