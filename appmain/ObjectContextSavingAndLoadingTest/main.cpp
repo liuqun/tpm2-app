@@ -23,6 +23,7 @@ using namespace std;
 // 内部函数原型声明
 static void TestRSAStorageKeyBuilderClient(ConnectionManager& connectionManager);
 static void TestTPMNodeRestoringClient(ConnectionManager& connectionManager);
+static void TestNameAfterNodeIsRestored(ConnectionManager& connectionManager);
 
 /* 排版格式: 以下函数均使用4个空格缩进，不使用Tab缩进 */
 
@@ -97,7 +98,7 @@ int main(int argc, char *argv[])
     }
     connectionManager->connect();
     TestRSAStorageKeyBuilderClient(*connectionManager);
-    TestTPMNodeRestoringClient(*connectionManager);
+    TestNameAfterNodeIsRestored(*connectionManager);
     connectionManager->disconnect();
 
     return (0);
@@ -371,5 +372,114 @@ static void TestTPMNodeRestoringClient(ConnectionManager& connectionManager)
         client.bind(connectionManager);
         client.flushNode(handle);
         client.unbind();
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+static void HexTextFromBinaryData(std::string& text, const void *dataIn, unsigned int length)
+{
+    const char hex[16] = // 十六进制编码映射表
+    {
+        '0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'
+    };
+    const unsigned char *data = (const unsigned char *)dataIn;
+    unsigned int i;
+    unsigned int j;
+
+    char *szCache;
+    const unsigned int n = length*2; // 可以事先求出总长度n
+    szCache = (char *)malloc(n+1); // 分配n+1字节, 末尾'\0'
+    assert(szCache);
+    if (!szCache)
+    {
+        return; // TODO: 报错内存耗尽, 无法申请n+1字节的缓冲区
+    }
+    szCache[0] = '\0';
+    j = 0;
+    for (i=0; i<=length; i++)
+    {
+        szCache[j++] = hex[0x0F & (data[i]>>4)];
+        szCache[j++] = hex[0x0F & data[i]];
+    }
+    szCache[n] = '\0';
+    text.assign(szCache, n); // 只输出n字节即可, 不依赖字符串结束符'\0'
+    free(szCache);
+}
+
+#include <stdexcept>
+using std::exception;
+#include "Client.h"
+#include "ContextFileParser.h"
+
+static void TestNameAfterNodeIsRestored(ConnectionManager& connectionManager)
+{
+    class NodeNameDisplayerClient: public Client
+    {
+    public:
+        std::string sName;
+        std::string sQualifiedName;
+    public:
+        void fetchNodeName(const TPMS_CONTEXT& nodeContext)
+        {
+            try
+            {
+                TPMCommands::ContextLoad contextLoad;
+                contextLoad.configContext(nodeContext);
+                printf("发送 ContextLoad 命令通过上下文还原先前的节点对象, 等待应答桢\n");
+                sendCommand(contextLoad);
+                fetchResponse();
+
+                TPM_HANDLE handle;
+                handle = contextLoad.outHandle();
+                printf("还原后, 新的节点句柄为 0x%08X\n", (int)handle);
+
+                TPMCommands::ReadPublic readPublic;
+                readPublic.configObject(handle);
+                printf("发送 ReadPublic 命令查询节点公开信息, 等待应答桢\n");
+                sendCommand(readPublic);
+                fetchResponse();
+                const TPM2B_NAME& name = readPublic.outName();
+                const TPM2B_NAME& qualifiedName = readPublic.outQualifiedName();
+                HexTextFromBinaryData(sName, name.b.buffer, name.b.size);
+                HexTextFromBinaryData(sQualifiedName, qualifiedName.b.buffer, qualifiedName.b.size);
+
+                printf("发送 FlushContext 命令, 让 TPM 再次删除当前节点 0x%08X\n", (int)handle);
+                TPMCommands::FlushLoadedKeyNode flush;
+                try
+                {
+                    flush.configKeyNodeToFlushAway(handle);
+                    sendCommand(flush);
+                    fetchResponse();
+                    printf("已经成功删除了节点\n");
+                } catch (std::exception& e)
+                {
+                    fprintf(stderr, "flushPrimaryNode: An error happened: %s\n", e.what());
+                } catch (...)
+                {
+                    fprintf(stderr, "Unknown error happened in TPM command FlushLoadedKeyNode\n");
+                }
+            } catch (std::exception& e)
+            {
+                fprintf(stderr, "TPMNodeRestoringClient::generatePrimaryRSAStorageKey(): An error happened: %s\n", e.what());
+            }
+        }
+    };
+
+    TPMS_CONTEXT nodeContext;
+    ContextFileParser parser;
+
+    parser.setFileName("PrimaryNodeContext.csv");
+    parser.fetch(nodeContext);
+
+    {
+        NodeNameDisplayerClient client;
+        client.bind(connectionManager);
+        client.fetchNodeName(nodeContext);
+        client.unbind();
+
+        printf("查询结果如下:\n");
+        printf("节点名: %s\n", client.sName.c_str());
+        printf("QualifiedName: %s\n", client.sQualifiedName.c_str());
     }
 }
