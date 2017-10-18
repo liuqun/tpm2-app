@@ -65,7 +65,7 @@ void CharacterDeviceConnectionManager::connect()
     TSS2_RC tctiError;
     tctiError = InitDeviceTcti(m_tctiContext, &m_tctiContextSize, &conf);
     if (tctiError) {
-        fprintf(stderr, "Error: InitSocketTcti() returns 0x%X\n", (int) tctiError);
+        fprintf(stderr, "Error: InitDeviceTcti() returns 0x%X\n", (int) tctiError);
         // TODO: throw/raise an expection to the up level
     }
 }
