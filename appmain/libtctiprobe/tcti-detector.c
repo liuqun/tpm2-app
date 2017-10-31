@@ -133,25 +133,26 @@ static void tcti_detector_cleanup(void *instance)
 {
     tcti_detector_t detector;
 
-    detector.ptr = instance;
+    detector = (tcti_detector_t) instance;
 
     /* 1. Clean up sub items. */
-    detector.probe->cleanup(instance);
+    detector->probe.cleanup(instance);
     /* 2. Release allocated memory space. */
-    if (detector.self->tcti_context_size > 0 && detector.self->tcti_context) {
-        free(detector.self->tcti_context);
+    if (detector->tcti_context_size > 0 && detector->tcti_context) {
+        free(detector->tcti_context);
     }
-    detector.self->tcti_context_size = 0;
-    detector.self->tcti_context = NULL;
-    detector.self->tcti_func_list.InitDeviceTcti = ((init_device_tcti_func_t) NULL);
-    detector.self->tcti_func_list.tss2_tcti_tabrmd_init = ((init_tabrmd_tcti_func_t) NULL);
+    detector->tcti_context_size = 0;
+    detector->tcti_context = NULL;
+    detector->tcti_func_list.InitDeviceTcti = ((init_device_tcti_func_t) NULL);
+    detector->tcti_func_list.tss2_tcti_tabrmd_init = ((init_tabrmd_tcti_func_t) NULL);
     /* 3. Relink clean-up function pointer to the dummy one. */
-    detector.self->cleanup = dummy_instance_cleanup;
+    detector->cleanup = dummy_instance_cleanup;
 }
 
 const char *tcti_detector_get_current_loaded_library_pathname(const tcti_detector_t detector)
 {
-    return (get_current_loaded_library_pathname(detector.probe));
+    const probe_t probe = &(detector->probe);
+    return (get_current_loaded_library_pathname(probe));
 }
 
 static void tcti_detector_init(struct tcti_detector_instance_t *instance)
@@ -178,11 +179,11 @@ tcti_detector_t new_tcti_detector()
 
 void delete_tcti_detector(tcti_detector_t instance)
 {
-    if (!instance.ptr) {
+    if (!instance) {
         return;
     }
-    instance.self->cleanup(instance.ptr);
-    free(instance.self);
+    instance->cleanup((void *) instance);
+    free(instance);
 }
 
 #ifdef STATIC_LINKING_AGAINST_TCTI_DEVICE_LIB_IS_ALLOWED
@@ -327,22 +328,21 @@ probe_result_t probe_tabrmd_tcti(struct tcti_detector_instance_t *self)
 
 probe_result_t tcti_detector_auto_probe(tcti_detector_t detector)
 {
-    struct tcti_detector_instance_t *self;
     probe_result_t ret;
 
     ret = PROBE_GENERIC_FAILURE;
-    assert(detector.ptr);
-    if (!detector.ptr) {
+    assert(detector);
+    if (!detector) {
         return (PROBE_GENERIC_FAILURE);
     }
 
-    tcti_detector_cleanup(detector.ptr);
+    tcti_detector_cleanup((void *) detector);
 
-    if (PROBE_SUCCESS == (ret = probe_device_tcti(detector.self))) {
+    if (PROBE_SUCCESS == (ret = probe_device_tcti(detector))) {
         return (PROBE_SUCCESS);
     }
 
-    if (PROBE_SUCCESS == (ret = probe_tabrmd_tcti(detector.self))) {
+    if (PROBE_SUCCESS == (ret = probe_tabrmd_tcti(detector))) {
         return (PROBE_SUCCESS);
     }
 
@@ -351,7 +351,7 @@ probe_result_t tcti_detector_auto_probe(tcti_detector_t detector)
 
 TSS2_TCTI_CONTEXT *tcti_detector_get_tcti_context(tcti_detector_t detector)
 {
-    return (detector.self->tcti_context);
+    return (detector->tcti_context);
 }
 
 #endif /* defined(FEATURE_TCTI_PROBE_ENABLED) */

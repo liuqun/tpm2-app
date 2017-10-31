@@ -11,11 +11,7 @@
 #include "probe.h"
 #include <sapi/tpm20.h>
 
-typedef union {
-    void *ptr;
-    struct probe_instance_t *probe;
-    struct tcti_detector_instance_t *self;
-} tcti_detector_t;
+typedef struct tcti_detector_instance_t *tcti_detector_t;
 
 #ifdef __cplusplus
 extern "C" {
