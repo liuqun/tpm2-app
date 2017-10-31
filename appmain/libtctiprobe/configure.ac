@@ -26,6 +26,7 @@ AC_ARG_ENABLE([static-linking-against-shared-tcti-lib],
 	[
 		AC_CHECK_HEADERS([tcti/tcti_device.h])
 		AC_CHECK_HEADERS([tcti/tcti_socket.h])
+		AC_CHECK_HEADERS([tcti/tcti-tabrmd.h])
 	]
 )
 
