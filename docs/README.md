@@ -6,12 +6,12 @@ doxygen doxygen.conf
 ```
 
 # 如何获取 TPM2.0 软件栈源代码
-使用浏览器访问 https://github.com/01org/TPM2.0-TSS
+使用浏览器访问 https://github.com/tpm2-software/tpm2-tss/releases
 
-然后可以手动选择下载历史版本 1.0:
+1.x正式版本:
+- [1.0](https://github.com/tpm2-software/tpm2-tss/archive/1.0.zip)
+- [1.1.0](https://github.com/tpm2-software/tpm2-tss/archive/1.1.0.zip)
+- 1.2.0, 1.3.0 和 1.4.0 可以通过页面提示手动下载
 
-https://github.com/01org/TPM2.0-TSS/archive/1.0.zip
-
-或下载当前开发中的最新版本(master)
-
-https://github.com/01org/TPM2.0-TSS/archive/master.zip
+2.0.0-dev版本可通过git克隆:
+- `git clone https://github.com/tpm2-software/tpm2-tss.git`
