@@ -132,7 +132,7 @@ int main(int argc, char *argv[])
             Tss2_Sys_Finalize(sys_context);
             free(sys_context);
         }
-        manager.disconnect();
+        //manager.disconnect();
         ret = EXIT_SUCCESS;
     } catch (const std::exception &e) {
         fprintf(stderr, "%s\n", e.what());
